@@ -155,7 +155,23 @@ class QuantumGraph
     void makePosImaginaryLengthVectorSum();
 
 
+
+  protected:
+    // This method is essentially the same as the gsl constructor,
+    // Except that it deletes the matrix as it exists and resets it to
+    // one described by the new length vector and scattering matrix.
+    //
+    // This method is intended to let a derived class set the 
+    // mathematical portion of the model to match its implementation.
+    void setGraph(const gsl_vector_complex*, const gsl_matrix_complex*);
+
+
+
   public:
+    // Default Constructor. Sets the SMatrix and Length Vector to a
+    // single entry which is zero.
+    QuantumGraph();
+
     // Basic Constructor. Takes in a list of lengths and a scattering
     // matrix that have already been put into gsl_complex form.
     QuantumGraph(const gsl_vector_complex*, const gsl_matrix_complex*);

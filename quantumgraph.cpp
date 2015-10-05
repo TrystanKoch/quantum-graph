@@ -53,6 +53,15 @@ const double SVD_EPSILON = 1e-10;
 // Constructor Methods
 
 
+QuantumGraph::QuantumGraph()
+{
+  numBonds = 1;
+
+  allocGraphMemory(numBonds);
+
+  makeInternals();
+}
+
 // Constructor from GSL types
 QuantumGraph::QuantumGraph(const gsl_vector_complex* LL,
                            const gsl_matrix_complex* SS)
@@ -366,7 +375,36 @@ void QuantumGraph::freeGraphMemory()
   gsl_vector_complex_free(negImaginaryLengthVector);
 }
 
+////////////////////////////////////////////////////////////////////////
+/// Methods for Derived Classes only
 
+// Protected method for resetting the representation of the graph based
+// on the implementation of a derived class.
+void QuantumGraph::setGraph(const gsl_vector_complex* LL,
+                            const gsl_matrix_complex* SS)
+{
+  freeGraphMemory();
+
+  numBonds = SS->size1;
+
+  if (LL->size != numBonds)
+  {
+    std::clog << "Length Vector and S Matrix must be same dimension." 
+              << std::endl;
+  }
+  else if (SS->size2 != numBonds)
+  {
+    std::clog << "S Matrix must be square." 
+              << std::endl;
+  }
+
+  allocGraphMemory(numBonds);
+
+  gsl_matrix_complex_memcpy(SMatrix, SS);
+  gsl_vector_complex_memcpy(LengthVector, LL);
+
+  makeInternals();
+}
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -731,6 +769,11 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   // Works like we expect "os << QG << std::endl;" to do.
   return os;
 }
+
+
+
+
+
 
 
 

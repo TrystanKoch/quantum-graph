@@ -96,7 +96,7 @@ LDFLAGS=-lgsl -lgslcblas -llapacke
 CODETARGETS=bound_qg_roots find_bounded_qg_roots 
 
 # "make" will create the program files only
-code: $(CODETARGETS)
+code: $(CODETARGETS) quantumgraphobject.o
 
 
 ########################################################################
@@ -152,6 +152,10 @@ find_bounded_qg_roots.o: find_bounded_qg_roots.cpp
 
 quantumgraph.o: quantumgraph.cpp quantumgraph.h
 	@$(CC) $(CFLAGS) -c quantumgraph.cpp
+	@echo "  Compiled $@"
+
+quantumgraphobject.o: quantumgraphobject.cpp quantumgraphobject.h
+	@$(CC) $(CFLAGS) -c quantumgraphobject.cpp
 	@echo "  Compiled $@"
 
 quantumgraphrootfinding.o: quantumgraphrootfinding.cpp \
