@@ -3,6 +3,7 @@
 #include "quantumgraphobject.h"
 
 #include <iostream>
+#include <vector>
 
 //
 //
@@ -53,7 +54,6 @@ void QuantumGraphObject::Connect(unsigned int a, unsigned int b,
 
 QuantumGraphObject::~QuantumGraphObject()
 {
-  std::clog << "Got here" << std::endl;
   for (unsigned int i=0; i<Nodes.size(); i++)
   {
     delete Nodes[i];
@@ -63,6 +63,38 @@ QuantumGraphObject::~QuantumGraphObject()
   {
     delete UndirectedBonds[i];
   }
+}
+
+
+int QuantumGraphObject::GetBondIndexFromPointer(QuantumGraphBond* QGBP)
+{
+  for (unsigned int ub=0; ub<UndirectedBonds.size(); ub++)
+  {
+    if ((UndirectedBonds[ub]->GetForwardBond()) == QGBP)
+    {
+      return 2 * ub;
+    }
+    else if ((UndirectedBonds[ub]->GetBackwardBond()) == QGBP)
+    {
+      return 2 * ub + 1;
+    }
+  }
+
+  return -1;
+}
+
+
+int QuantumGraphObject::GetNodeIndexFromPointer(QuantumGraphNode* QGNP)
+{
+  for (unsigned int n=0; n<Nodes.size(); n++)
+  {
+    if (Nodes[n] == QGNP)
+    {
+      return n;
+    }
+  }
+
+  return -1;
 }
 
 
@@ -83,22 +115,61 @@ void QuantumGraphObject::UpdateQuantumGraph()
 
 
   // The 
-  for (unsigned int bOut=0; bOut<numUBonds; bOut++)
+  for (unsigned int b=0; b<numUBonds; b++)
   {
-    std::vector<QuantumGraphUndirectedBond*> In;
-    In = UndirectedBonds[bOut]->GetForwardBond()
-                              ->GetStartNode()->GetConnectedBonds();
-    for (unsigned int bIn=0; bIn<numUBonds; bIn++)
+    //debug
+    //std::clog << std::endl;
+   // std::clog << "b = " << b << std::endl;
+   // std::clog << "   ForwardBond" << std::endl;
+    //Calculate for the Forward Bond
+    int i = 2*b;
+    gsl_vector_complex_set(newLVector, i, UndirectedBonds[b]->GetForwardBond()->GetBondLength());
+
+    int l;
+    QuantumGraphBond* ForwardBond = UndirectedBonds[b]->GetForwardBond();
+    QuantumGraphNode* FStartNodeP = ForwardBond->GetStartNode();
+    std::vector<QuantumGraphBond*> FIn = FStartNodeP->GetIncomingBonds();
+
+    l = FStartNodeP->GetBondIndexAtNodeFromPointer(ForwardBond);
+
+      // std::clog << "     Comes from node "<< GetNodeIndexFromPointer(FStartNodeP) << std::endl;
+    for (unsigned int m=0; m<FIn.size(); m++)
     {
-      UndirectedBonds[bIn]->GetForwardBond();
+       int j = GetBondIndexFromPointer(FIn[m]);
+       //std::clog << "     S Element =  ("<< i << "," << j << ")" << std::endl;
+
+      // std::clog << "     Node S  Element =  (" << l << "," << m << ")" << std::endl;
+
+       gsl_complex Sij = FStartNodeP->GetMatrixElement(l, m);
+       gsl_matrix_complex_set(newSMatrix, i, j, Sij);
     }
 
-    In = UndirectedBonds[bOut]->GetBackwardBond()
-                              ->GetStartNode()->GetConnectedBonds();
-    for (unsigned int bIn=0; bIn<numUBonds; bIn++)
+
+    //debug
+    //std::clog << "   BackwardBond" << std::endl;
+    // Now For the Backward Bond
+    i = (2*b)+1;
+
+    gsl_vector_complex_set(newLVector, i, UndirectedBonds[b]->GetBackwardBond()->GetBondLength());
+
+    QuantumGraphBond* BackwardBond = UndirectedBonds[b]->GetBackwardBond();
+    QuantumGraphNode* BStartNodeP = BackwardBond->GetStartNode();
+    std::vector<QuantumGraphBond*> BIn = BStartNodeP->GetIncomingBonds();
+
+    l = BStartNodeP->GetBondIndexAtNodeFromPointer(BackwardBond);
+   //    std::clog << "     Comes from node "<< GetNodeIndexFromPointer(BStartNodeP) << std::endl;
+    for (unsigned int m=0; m<BIn.size(); m++)
     {
-      
+       int j = GetBondIndexFromPointer(BIn[m]);
+      // std::clog << "     S Element =  ("<< i << "," << j << ")" << std::endl;
+
+       //std::clog << "     Node S  Element =  (" << l << "," << m << ")" << std::endl;
+
+       gsl_complex Sij = BStartNodeP->GetMatrixElement(l, m);
+       gsl_matrix_complex_set(newSMatrix, i, j, Sij);
     }
+    //*/
+
   }
 
   setGraph(newLVector, newSMatrix);
@@ -133,7 +204,47 @@ void QuantumGraphNode::ConnectToBond(QuantumGraphUndirectedBond* QGUB)
   ConnectedBonds.push_back(QGUB);
 }
 
-std::vector<QuantumGraphUndirectedBond*> QuantumGraphNode::GetConnectedBonds()
+
+std::vector<QuantumGraphBond*> QuantumGraphNode::GetIncomingBonds()
+{
+  std::vector<QuantumGraphBond*> InBondsPVec;
+  for (unsigned int m=0; m<ConnectedBonds.size(); m++)
+  {
+    if (ConnectedBonds[m]->GetForwardBond()->GetEndNode() == this)
+    {
+      InBondsPVec.push_back(ConnectedBonds[m]->GetForwardBond());
+    }
+    else if (ConnectedBonds[m]->GetBackwardBond()->GetEndNode() == this)
+    {
+      InBondsPVec.push_back(ConnectedBonds[m]->GetBackwardBond());
+    }
+  }
+
+  return InBondsPVec;
+}
+
+
+int QuantumGraphNode::GetBondIndexAtNodeFromPointer(QuantumGraphBond* QGBP)
+{
+  for (unsigned int m=0; m<ConnectedBonds.size(); m++)
+  {
+    if (ConnectedBonds[m]->HasDirectedBond(QGBP))
+    {
+      return m;
+    }
+  }
+  
+  return -10;
+}
+
+
+
+gsl_complex QuantumGraphNode::GetMatrixElement(int l, int m)
+{
+  return gsl_matrix_complex_get(SMatrix, l, m);
+}
+
+std::vector<QuantumGraphUndirectedBond*> QuantumGraphNode::GetConnectedUBonds()
 {
   return ConnectedBonds;
 }
@@ -148,6 +259,20 @@ QuantumGraphUndirectedBond::QuantumGraphUndirectedBond(
 ) :ForwardBond(ForwardStart, ForwardEnd, LL), 
    BackwardBond(ForwardEnd, ForwardStart, LL)
 {
+}
+
+
+
+bool QuantumGraphUndirectedBond::HasDirectedBond(QuantumGraphBond* QGB)
+{
+  if ((QGB == &ForwardBond) or (QGB == &BackwardBond))
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 
@@ -176,3 +301,15 @@ QuantumGraphNode* QuantumGraphBond::GetStartNode()
 {
   return StartNode;
 }
+
+QuantumGraphNode* QuantumGraphBond::GetEndNode()
+{
+  return EndNode;
+}
+
+gsl_complex QuantumGraphBond::GetBondLength()
+{
+  return ComplexLength;
+}
+
+

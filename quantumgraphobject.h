@@ -63,6 +63,8 @@ class QuantumGraphObject: public QuantumGraph
     void Connect(QuantumGraphNode&, QuantumGraphNode&, gsl_complex);
     void Connect(unsigned int, unsigned int, gsl_complex);
     void UpdateQuantumGraph();
+    int GetBondIndexFromPointer(QuantumGraphBond*);
+    int GetNodeIndexFromPointer(QuantumGraphNode*);
 };
 
 
@@ -80,9 +82,11 @@ class QuantumGraphNode
     //QuantumGraphNode(const QuantumGraphNode&);
     //std::vector<QuantumGraphNode&> GetConnectedNodes() const;
     //std::vector<QuantumGraphBond&> GetOutgoingBonds() const;
-    //std::vector<QuantumGraphBond&> GetIncomingBonds() const;
-    std::vector<QuantumGraphUndirectedBond*> GetConnectedBonds();
+    std::vector<QuantumGraphBond*> GetIncomingBonds();
+    std::vector<QuantumGraphUndirectedBond*> GetConnectedUBonds();
+    int GetBondIndexAtNodeFromPointer(QuantumGraphBond*);
     void ConnectToBond(QuantumGraphUndirectedBond*);
+    gsl_complex GetMatrixElement(int, int);
 };
 
 
@@ -98,8 +102,8 @@ class QuantumGraphBond
     //QuantumGraphBond(const QuantumGraphBond&);
     QuantumGraphBond(QuantumGraphNode*, QuantumGraphNode*, gsl_complex);
     QuantumGraphNode* GetStartNode();
-    //QuantumGraphNode& GetEndNode() const;
-    //gsl_complex GetLength() const;
+    QuantumGraphNode* GetEndNode();
+    gsl_complex GetBondLength();
 };
 
 
@@ -115,6 +119,7 @@ class QuantumGraphUndirectedBond
     QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*, gsl_complex);
     QuantumGraphBond* GetForwardBond();
     QuantumGraphBond* GetBackwardBond();
+    bool HasDirectedBond(QuantumGraphBond*);
     //std::vector<QuantumGraphNode&> GetAttachedNodes const;
     
 };

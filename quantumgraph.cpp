@@ -708,7 +708,8 @@ gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
 std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
 {
   // Lose no precision due to storing double as text.
-  os.precision( std::numeric_limits<double>::max_digits10 );
+  //os.precision( std::numeric_limits<double>::max_digits10 );
+  os.precision(3 );
   os << std::scientific;
   os << std::showpos;
 
@@ -764,7 +765,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   // So we know when we have all the information about the quantum graph
   // when we examine it in the constructor.
   os << "#  "   << std::endl;
-  os << "# END" << std::endl;
+  os << "# END";
 
   // Works like we expect "os << QG << std::endl;" to do.
   return os;
