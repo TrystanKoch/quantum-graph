@@ -51,7 +51,7 @@ const double NEWTON_QG_EPS = 5e-16;
 // useful to spend too much effort looking for one root. If this many
 // initial conditions do not end in Newton's method converging, then
 // we output an error message and move on.
-const unsigned int NEWTON_QG_MAX_REPEATS = 200;
+const unsigned int NEWTON_QG_MAX_REPEATS = 20;
 
 
 

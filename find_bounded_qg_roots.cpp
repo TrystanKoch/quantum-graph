@@ -34,11 +34,24 @@
 
 int main(int argc, char* argv[])
 {
-  QuantumGraph QG = QuantumGraph(LLreal, LLimag, SSreal, SSimag);
+
+  std::vector<std::string> header;
+  std::string line;
+  while (std::getline(std::cin, line))
+  {
+    if (line[0]=='#')
+    {
+      header.push_back(line);
+      if (!line.compare("# END"))
+      {
+        break;
+      }
+    }
+  }
+
+  QuantumGraph QG = QuantumGraph(header);
 
   std::stringstream ss;
-  std::string line;
-  std::vector<std::string> header;
 
   BoundingBox BB;
   gsl_complex root;
@@ -47,7 +60,7 @@ int main(int argc, char* argv[])
   std::cout.precision(std::numeric_limits<double>::max_digits10);
   std::cout << std::scientific << std::showpos;
 
-  unsigned long long int count=0;
+  unsigned long long int count = 0;
   while (std::getline(std::cin, line))
   {
     ss.clear();

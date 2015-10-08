@@ -369,14 +369,14 @@ gsl_complex newtonRootFinderQRNG(BoundingBox& BB, gsl_qrng * qrng,
 
     }
     else if (gsl_complex_abs(gsl_complex_sub(zNew,zOld))/gsl_complex_abs(zOld) <NEWTON_QG_EPS)
-    {
- /* BB =  initializeBoundingBox(BB.realMin, BB.realMax, 
+    {/*
+ BB =  initializeBoundingBox(BB.realMin, BB.realMax, 
                               BB.imagMin, BB.imagMax,
                               NEWTON_INIT_HALVINGS,
                               NEWTON_INIT_HALVINGS,
                               QG);
   std::clog << "1 Root found in [" << BB << "]" << std::endl;
-  std::clog << "   Winding Number: " << windingNumber(BB) << std::endl;*/
+  std::clog << "   Winding Number: " << windingNumber(BB) << std::endl;//*/
       return zNew;
     }
   //std::clog << GSL_REAL(zOld)<< "  " <<GSL_IMAG(zOld) << std::endl;

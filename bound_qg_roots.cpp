@@ -25,7 +25,6 @@
 //
 
 #include "quantumgraph.h"
-#include "qg-tetrahedron.h"
 #include "quantumgraphrootfinding.h"
 
 #include <cmath>
@@ -44,31 +43,46 @@
 
 
 
-const double ONE_ROOT_X_MIN = +0.1;
-const double ONE_ROOT_X_MAX = +10000;
-const double ONE_ROOT_Y_MIN = -0.01;
-const double ONE_ROOT_Y_MAX = +0.02; 
+const double X_MIN = +0.1;
+const double X_MAX = +10000;
+const double Y_MIN = -0.01;
+const double Y_MAX = +0.02; 
 
 
 // Number of discrete points along a side
 // 2**10 + 1 -> 10 halvings possible
 const unsigned int NUM_HALVINGS_X = 22;
-const unsigned int NUM_HALVINGS_Y = 4;
+const unsigned int NUM_HALVINGS_Y = 8;
 
 
 int main()
 {
+
+  // Read the input file. Pass the header along to the output files and
+  // then send the data to a vector for further processing.
+  std::string line;
+  std::vector<std::string> header;
+  while (std::getline(std::cin, line))
+  {
+    // Check if there is a header.
+    if (line[0]=='#')
+    {
+      header.push_back(line);
+      continue;
+    }
+  }
+
   // Initialize the quantum graph.
-  QuantumGraph QG = QuantumGraph(LLreal, LLimag, SSreal, SSimag);
+  QuantumGraph QG = QuantumGraph(header);
   
   // Instantiate the vectors
   std::clog << std::endl;
   std::clog << "Making Initial Boundary..." << std::endl;
   BoundingBox initialBoundary;
-  initialBoundary = initializeBoundingBox(ONE_ROOT_X_MIN, 
-                                          ONE_ROOT_X_MAX,
-                                          ONE_ROOT_Y_MIN,
-                                          ONE_ROOT_Y_MAX,
+  initialBoundary = initializeBoundingBox(X_MIN, 
+                                          X_MAX,
+                                          Y_MIN,
+                                          Y_MAX,
                                           NUM_HALVINGS_X,
                                           NUM_HALVINGS_Y, QG);
 
@@ -85,7 +99,8 @@ int main()
 
   //////////////////////////////////////////////////////////////////////
   /// Test the Recursive RootBounding
-
+  
+  std::cout << QG << std::endl;
   // We want to test the recursive root bounding algorithm. So 
   std::clog << "Recursively Finding Complex Root Bounds..." << std::endl;
   unsigned long long int total 

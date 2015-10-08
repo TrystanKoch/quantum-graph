@@ -110,8 +110,13 @@ results: $(RESULTTARGETS)
 ### Use these directives to calculate the roots of the quantum graph
 ### which is defined in bound_qg_roots.cpp (to change)
 
-roots.dat: bound_qg_roots find_bounded_qg_roots
-	time ./bound_qg_roots | ./find_bounded_qg_roots >roots.dat
+roots.dat: find_bounded_qg_roots root_bounds.dat
+	time ./find_bounded_qg_roots >roots.dat
+
+root_bounds.dat: bound_qg_roots
+	time ./bound_qg_roots >root_bounds.dat
+
+
 
 
 ########################################################################
@@ -185,9 +190,8 @@ clean: tidy
 # Files with the same name are backed up and not overwritten. 
 # The archive files are 
 cleandata: | data/$(shell date -I)
-	@if test -e *.dat; \
-		then mv --backup=t *.dat data/$(shell date -I) \
-		&& echo "  Archived data files to: data/`date -I`/"; fi
+	@if mv --backup=t *.dat data/$(shell date -I) 2>/dev/null; \
+		then echo "  Archived data to: data/`date -I`/"; fi
 
 # Creates an archive file with the present date as the name
 data/%:
