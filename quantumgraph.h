@@ -102,7 +102,7 @@ class QuantumGraph
   private:
     // The number of directed bonds in the graph.
     // Used for many iterations over the bonds and memory allocations.
-    unsigned int numBonds;
+    unsigned int num_bonds_;
 
 
     // The scattering matrix describing the vertex scattering of the

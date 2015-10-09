@@ -55,9 +55,9 @@ const double SVD_EPSILON = 1e-10;
 
 QuantumGraph::QuantumGraph()
 {
-  numBonds = 1;
+  num_bonds_ = 1;
 
-  allocGraphMemory(numBonds);
+  allocGraphMemory(num_bonds_);
 
   makeInternals();
 }
@@ -66,20 +66,20 @@ QuantumGraph::QuantumGraph()
 QuantumGraph::QuantumGraph(const gsl_vector_complex* LL,
                            const gsl_matrix_complex* SS)
 {
-  numBonds = SS->size1;
+  num_bonds_ = SS->size1;
 
-  if (LL->size != numBonds)
+  if (LL->size != num_bonds_)
   {
     std::clog << "Length Vector and S Matrix must be same dimension." 
               << std::endl;
   }
-  else if (SS->size2 != numBonds)
+  else if (SS->size2 != num_bonds_)
   {
     std::clog << "S Matrix must be square." 
               << std::endl;
   }
 
-  allocGraphMemory(numBonds);
+  allocGraphMemory(num_bonds_);
 
   gsl_matrix_complex_memcpy(SMatrix, SS);
   gsl_vector_complex_memcpy(LengthVector, LL);
@@ -99,8 +99,8 @@ QuantumGraph::QuantumGraph(const std::vector<double>LLreal,
 {
   // Make sure we're not giving the object vectors and matrices of
   // different sizes.
-  numBonds = LLreal.size();
-  if (numBonds!=LLimag.size())
+  num_bonds_ = LLreal.size();
+  if (num_bonds_!=LLimag.size())
   {
     std::clog << "Imaginary part of Length Vector has incorrect size." 
               << std::endl;
@@ -117,12 +117,12 @@ QuantumGraph::QuantumGraph(const std::vector<double>LLreal,
   }
 
   // Okay, allocate the memory for data members.
-  allocGraphMemory(numBonds);
+  allocGraphMemory(num_bonds_);
   
   // Make SMatrix
-  for (unsigned int i=0; i<numBonds; i++)
+  for (unsigned int i=0; i<num_bonds_; i++)
   {
-      for (unsigned int j=0; j<numBonds; j++)
+      for (unsigned int j=0; j<num_bonds_; j++)
       {
           gsl_complex Sij = gsl_complex_rect(SSreal[i][j],SSimag[i][j]);
           gsl_matrix_complex_set(SMatrix, i, j, Sij);
@@ -130,7 +130,7 @@ QuantumGraph::QuantumGraph(const std::vector<double>LLreal,
   }
 
   // Make LengthVector
-  for (unsigned int j=0; j<numBonds; j++)
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
       gsl_complex Lj = gsl_complex_rect(LLreal[j], LLimag[j]);
       gsl_vector_complex_set(LengthVector, j, Lj);
@@ -152,7 +152,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
   std::vector<double> LengthsImag;
   std::vector<double> LengthsReal;
 
-  numBonds = 0;
+  num_bonds_ = 0;
 
   for (unsigned int i=0; i<header.size(); i++)
   {
@@ -161,25 +161,25 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
     {
       line = header[i+1];
       line.erase(0,1);
-      numBonds = std::stoi(line);
-      LengthsImag.resize(numBonds);
-      LengthsReal.resize(numBonds);
-      SMatrixImag.resize(numBonds);
-      SMatrixReal.resize(numBonds);
-      for (unsigned int m=0; m<numBonds; m++)
+      num_bonds_ = std::stoi(line);
+      LengthsImag.resize(num_bonds_);
+      LengthsReal.resize(num_bonds_);
+      SMatrixImag.resize(num_bonds_);
+      SMatrixReal.resize(num_bonds_);
+      for (unsigned int m=0; m<num_bonds_; m++)
       {
-        SMatrixImag[m].resize(numBonds);
-        SMatrixReal[m].resize(numBonds);
+        SMatrixImag[m].resize(num_bonds_);
+        SMatrixReal[m].resize(num_bonds_);
       }
     }
     else if (line == "#    S-Matrix (Real Part):")
     {
-      for (unsigned int m=0; m<numBonds; m++)
+      for (unsigned int m=0; m<num_bonds_; m++)
       {
         line = header[i+1+m];
         line.erase(0,1);
         std::stringstream SMatrixRealStream(line);
-        for (unsigned n=0; n<numBonds; n++)
+        for (unsigned n=0; n<num_bonds_; n++)
         {
           SMatrixRealStream >> SMatrixReal[m][n];
         }
@@ -187,13 +187,13 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
     }
     else if (line == "#    S-Matrix (Imaginary Part):")
     {
-      for (unsigned int m=0; m<numBonds; m++)
+      for (unsigned int m=0; m<num_bonds_; m++)
       {
         line = header[i+m+1];
         line.erase(0,1);
         std::stringstream SMatrixImagStream(line);
 
-        for (unsigned n=0; n<numBonds; n++)
+        for (unsigned n=0; n<num_bonds_; n++)
         {
           SMatrixImagStream >> SMatrixImag[m][n];
         }
@@ -204,7 +204,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
       line = header[i+1];
       line.erase(0,1);
       std::stringstream LengthRealStream(line);
-      for (unsigned int m=0; m<numBonds; m++)
+      for (unsigned int m=0; m<num_bonds_; m++)
       {
         LengthRealStream >> LengthsReal[m];
       }
@@ -214,7 +214,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
       line = header[i+1];
       line.erase(0,1);
       std::stringstream LengthImagStream(line);
-      for (unsigned int m=0; m<numBonds; m++)
+      for (unsigned int m=0; m<num_bonds_; m++)
       {
         LengthImagStream >> LengthsImag[m];
       }
@@ -225,12 +225,12 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
     }
   }
 
-  if (numBonds!=LengthsReal.size())
+  if (num_bonds_!=LengthsReal.size())
   {
     std::clog << "Real part of Length Vector has incorrect size." 
               << std::endl;
   }
-  if (numBonds!=LengthsImag.size())
+  if (num_bonds_!=LengthsImag.size())
   {
     std::clog << "Imaginary part of Length Vector has incorrect size." 
               << std::endl;
@@ -247,11 +247,11 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
   }
   
 
-  allocGraphMemory(numBonds);
+  allocGraphMemory(num_bonds_);
 
-  for (unsigned int i=0; i<numBonds; i++)
+  for (unsigned int i=0; i<num_bonds_; i++)
   {
-    for (unsigned int j=0; j<numBonds; j++)
+    for (unsigned int j=0; j<num_bonds_; j++)
     {
       gsl_complex Sij = gsl_complex_rect(SMatrixReal[i][j],
                                          SMatrixImag[i][j]);
@@ -259,7 +259,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
     }
   }
 
-  for (unsigned int i=0; i<numBonds; i++)
+  for (unsigned int i=0; i<num_bonds_; i++)
   {
     gsl_complex Li = gsl_complex_rect(LengthsReal[i],
                                       LengthsImag[i]);
@@ -275,8 +275,8 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
 // Copy constructor.
 QuantumGraph::QuantumGraph(const QuantumGraph& QG)
 {
-  numBonds = QG.numBonds;
-  allocGraphMemory(numBonds);
+  num_bonds_ = QG.num_bonds_;
+  allocGraphMemory(num_bonds_);
 
   gsl_matrix_complex_memcpy(SMatrix, QG.SMatrix);
   gsl_vector_complex_memcpy(LengthVector, QG.LengthVector);
@@ -325,7 +325,7 @@ void QuantumGraph::makeNegImaginaryLengthVector()
 void QuantumGraph::makePosImaginaryLengthVectorSum()
 {
   gsl_complex LengthSum = GSL_COMPLEX_ZERO;
-  for (unsigned int i=0; i<numBonds; i++)
+  for (unsigned int i=0; i<num_bonds_; i++)
   {
     gsl_complex Li = gsl_vector_complex_get(LengthVector, i);
     LengthSum = gsl_complex_add(LengthSum, Li);
@@ -337,13 +337,13 @@ void QuantumGraph::makePosImaginaryLengthVectorSum()
 // Check the size of a vector of vectors during initialization.
 bool QuantumGraph::checkMatrixSize(std::vector<std::vector<double>> M)
 {
-  if (M.size() != numBonds)
+  if (M.size() != num_bonds_)
   {
     return 0;
   }
-  for (unsigned int i=0; i<numBonds; i++)
+  for (unsigned int i=0; i<num_bonds_; i++)
   {
-    if (M[i].size() != numBonds)
+    if (M[i].size() != num_bonds_)
     {
       return 0;
     }
@@ -385,20 +385,20 @@ void QuantumGraph::setGraph(const gsl_vector_complex* LL,
 {
   freeGraphMemory();
 
-  numBonds = SS->size1;
+  num_bonds_ = SS->size1;
 
-  if (LL->size != numBonds)
+  if (LL->size != num_bonds_)
   {
     std::clog << "Length Vector and S Matrix must be same dimension." 
               << std::endl;
   }
-  else if (SS->size2 != numBonds)
+  else if (SS->size2 != num_bonds_)
   {
     std::clog << "S Matrix must be square." 
               << std::endl;
   }
 
-  allocGraphMemory(numBonds);
+  allocGraphMemory(num_bonds_);
 
   gsl_matrix_complex_memcpy(SMatrix, SS);
   gsl_vector_complex_memcpy(LengthVector, LL);
@@ -415,10 +415,10 @@ void QuantumGraph::setGraph(const gsl_vector_complex* LL,
 // along the real axis. Only a complex zero-finding algorithm will work.
 gsl_complex QuantumGraph::characteristic(const gsl_complex z) const
 {
-  gsl_matrix_complex* D = gsl_matrix_complex_calloc(numBonds, numBonds);
+  gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
   gsl_matrix_complex_memcpy(D, SMatrix);
 
-  for (unsigned int j=0; j<numBonds; j++)
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
       = gsl_vector_complex_get(negImaginaryLengthVector, j);
@@ -427,7 +427,7 @@ gsl_complex QuantumGraph::characteristic(const gsl_complex z) const
   }
 
   int signum;
-  gsl_permutation* p = gsl_permutation_alloc(numBonds);
+  gsl_permutation* p = gsl_permutation_alloc(num_bonds_);
 
   gsl_linalg_complex_LU_decomp(D, p, &signum);
   gsl_complex determinant = gsl_linalg_complex_LU_det(D, signum);
@@ -444,10 +444,10 @@ gsl_complex QuantumGraph::characteristic(const gsl_complex z) const
 
 gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
 {
-  gsl_matrix_complex* D = gsl_matrix_complex_calloc(numBonds, numBonds);
+  gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
   gsl_matrix_complex_memcpy(D, SMatrix);
 
-  for (unsigned int j=0; j<numBonds; j++)
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
       = gsl_vector_complex_get(negImaginaryLengthVector, j);
@@ -472,27 +472,27 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   char uOption = 'N'; // We don't care about the left eigenvalues.
   char vtOption = 'A'; // We want all of the right eigenvalues.
 
-  gsl_vector* S = gsl_vector_calloc(numBonds);
+  gsl_vector* S = gsl_vector_calloc(num_bonds_);
   gsl_matrix_complex* U 
-    = gsl_matrix_complex_calloc(numBonds,numBonds);
+    = gsl_matrix_complex_calloc(num_bonds_,num_bonds_);
   gsl_matrix_complex* VT
-    = gsl_matrix_complex_calloc(numBonds,numBonds);
+    = gsl_matrix_complex_calloc(num_bonds_,num_bonds_);
   
   gsl_complex* work 
     = (gsl_complex*) malloc(sizeof(gsl_complex));
   int workLength = -1; // This is a flag to optimize the size
-  double* rwork = (double*) malloc(5 * numBonds * sizeof(double));
+  double* rwork = (double*) malloc(5 * num_bonds_ * sizeof(double));
   
   // Because workLength is -1, the function computes an optimal
   // workspace size, then sets the first element of the work vector to
   // that.
   LAPACKE_zgesvd_work(LAPACK_ROW_MAJOR,
                       uOption, vtOption, 
-                      numBonds, numBonds,
-                      (gsl_complex*) D->data, numBonds, 
+                      num_bonds_, num_bonds_,
+                      (gsl_complex*) D->data, num_bonds_, 
                       S->data, 
-                      (gsl_complex*) U->data, numBonds,
-                      (gsl_complex*) VT->data, numBonds, 
+                      (gsl_complex*) U->data, num_bonds_,
+                      (gsl_complex*) VT->data, num_bonds_, 
                       work, workLength, 
                       rwork);
   
@@ -507,11 +507,11 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   // Now we take the SVD.
   LAPACKE_zgesvd_work(LAPACK_ROW_MAJOR,
                       uOption, vtOption, 
-                      numBonds, numBonds,
-                      (gsl_complex*) D->data, numBonds, 
+                      num_bonds_, num_bonds_,
+                      (gsl_complex*) D->data, num_bonds_, 
                       S->data, 
-                      (gsl_complex*) U->data, numBonds,
-                      (gsl_complex*) VT->data, numBonds, 
+                      (gsl_complex*) U->data, num_bonds_,
+                      (gsl_complex*) VT->data, num_bonds_, 
                       work, workLength, 
                       rwork);
 
@@ -519,7 +519,7 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   // element is the smallest. Presumably, if the characteristic matrix
   // is singular, this will be close to zero. If it is not, return a
   // warning to std::clog, but continue anyway.
-  int lastRow = numBonds-1;
+  int lastRow = num_bonds_-1;
   if (gsl_vector_get(S, lastRow) > SVD_EPSILON)
   {
     std::clog << "Warning: smallest singular value was " 
@@ -532,8 +532,8 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   // corresponds to the eigenvector of the matrix that corresponds
   // to the singular value. The function returns this whether the
   // smallest singular value was close to zero or not.
-  gsl_vector_complex* Eigenvector = gsl_vector_complex_calloc(numBonds);
-  for (unsigned int j=0; j<numBonds; j++)
+  gsl_vector_complex* Eigenvector = gsl_vector_complex_calloc(num_bonds_);
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex VLastj 
       = gsl_matrix_complex_get(VT, lastRow, j);
@@ -558,12 +558,12 @@ gsl_vector_complex*
 QuantumGraph::eigenvectorCheck(const gsl_complex z, const gsl_vector_complex* V)
 const
 {
-  gsl_vector_complex* resultVec = gsl_vector_complex_calloc(numBonds);
+  gsl_vector_complex* resultVec = gsl_vector_complex_calloc(num_bonds_);
 
-  gsl_matrix_complex* D = gsl_matrix_complex_calloc(numBonds, numBonds);
+  gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
   gsl_matrix_complex_memcpy(D, SMatrix);
 
-  for (unsigned int j=0; j<numBonds; j++)
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
       = gsl_vector_complex_get(negImaginaryLengthVector, j);
@@ -587,11 +587,11 @@ const
 // characteristic function divide by its derivative.
 gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
 {
-  gsl_matrix_complex* D = gsl_matrix_complex_calloc(numBonds, numBonds);
-  gsl_vector_complex* T = gsl_vector_complex_calloc(numBonds);
+  gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
+  gsl_vector_complex* T = gsl_vector_complex_calloc(num_bonds_);
   gsl_matrix_complex_memcpy(D, SMatrix);
 
-  for (unsigned int j=0; j<numBonds; j++)
+  for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
       = gsl_vector_complex_get(negImaginaryLengthVector, j);
@@ -617,27 +617,27 @@ gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
   char uOption = 'A'; // We need U
   char vtOption = 'A'; // We need V
 
-  gsl_vector* S = gsl_vector_calloc(numBonds);
+  gsl_vector* S = gsl_vector_calloc(num_bonds_);
   gsl_matrix_complex* U 
-    = gsl_matrix_complex_calloc(numBonds,numBonds);
+    = gsl_matrix_complex_calloc(num_bonds_,num_bonds_);
   gsl_matrix_complex* VT
-    = gsl_matrix_complex_calloc(numBonds,numBonds);
+    = gsl_matrix_complex_calloc(num_bonds_,num_bonds_);
   
   gsl_complex* work 
     = (gsl_complex*) malloc(sizeof(gsl_complex));
   int workLength = -1; // This is a flag to optimize the size
-  double* rwork = (double*) malloc(5 * numBonds * sizeof(double));
+  double* rwork = (double*) malloc(5 * num_bonds_ * sizeof(double));
   
   // Because workLength is -1, the function computes an optimal
   // workspace size, then sets the first element of the work vector to
   // that.
   LAPACKE_zgesvd_work(LAPACK_ROW_MAJOR,
                       uOption, vtOption, 
-                      numBonds, numBonds,
-                      (gsl_complex*) D->data, numBonds, 
+                      num_bonds_, num_bonds_,
+                      (gsl_complex*) D->data, num_bonds_, 
                       S->data, 
-                      (gsl_complex*) U->data, numBonds,
-                      (gsl_complex*) VT->data, numBonds, 
+                      (gsl_complex*) U->data, num_bonds_,
+                      (gsl_complex*) VT->data, num_bonds_, 
                       work, workLength, 
                       rwork);
   
@@ -652,11 +652,11 @@ gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
   // Now we take the SVD.
   LAPACKE_zgesvd_work(LAPACK_ROW_MAJOR,
                       uOption, vtOption, 
-                      numBonds, numBonds,
-                      (gsl_complex*) D->data, numBonds, 
+                      num_bonds_, num_bonds_,
+                      (gsl_complex*) D->data, num_bonds_, 
                       S->data, 
-                      (gsl_complex*) U->data, numBonds,
-                      (gsl_complex*) VT->data, numBonds, 
+                      (gsl_complex*) U->data, num_bonds_,
+                      (gsl_complex*) VT->data, num_bonds_, 
                       work, workLength, 
                       rwork);
 
@@ -672,10 +672,10 @@ gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
   gsl_complex trace = GSL_COMPLEX_ZERO;
   gsl_complex LTn, Unm, VTmn, mnProduct; 
   double Sm;
-  for (unsigned int m = 0; m<numBonds; m++)
+  for (unsigned int m = 0; m<num_bonds_; m++)
   {
     Sm = gsl_vector_get(S, m);
-    for (unsigned int n = 0; n<numBonds; n++)
+    for (unsigned int n = 0; n<num_bonds_; n++)
     {
       LTn = gsl_vector_complex_get(T, n);
       Unm = gsl_matrix_complex_get(U, n, m);
@@ -718,14 +718,14 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   os << "#  Quantum Graph Information" << std::endl;
   os << "#  "                          << std::endl;
   os << "#    Number of Bonds:"        << std::endl;
-  os << "#      " << QG.numBonds       << std::endl;
+  os << "#      " << QG.num_bonds_       << std::endl;
 
   // Write out real part of S-Matrix
   os << "#    S-Matrix (Real Part):"   << std::endl;
-  for (unsigned int i=0; i<QG.numBonds; i++)
+  for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
     os << "#    ";
-    for (unsigned int j=0; j<QG.numBonds; j++)
+    for (unsigned int j=0; j<QG.num_bonds_; j++)
     {
       os << "  " << GSL_REAL(gsl_matrix_complex_get(QG.SMatrix, i, j));
     }
@@ -734,10 +734,10 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   
   // Write out imaginary part of S-Matrix
   os << "#    S-Matrix (Imaginary Part):" << std::endl;
-  for (unsigned int i=0; i<QG.numBonds; i++)
+  for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
     os << "#    ";
-    for (unsigned int j=0; j<QG.numBonds; j++)
+    for (unsigned int j=0; j<QG.num_bonds_; j++)
     {
       os << "  " << GSL_IMAG(gsl_matrix_complex_get(QG.SMatrix, i, j));
     }
@@ -747,7 +747,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   // Write out real part of bond lengths
   os << "#    Lengths (Real Part):" << std::endl;
   os << "#    ";
-  for (unsigned int i=0; i<QG.numBonds; i++)
+  for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
     os << "  " << GSL_REAL(gsl_vector_complex_get(QG.LengthVector, i));
   }
@@ -756,7 +756,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   // Write out imaginary part of lengths (bond loss factors)
   os << "#    Lengths (Imaginary Part):" << std::endl;
   os << "#    ";
-  for (unsigned int i=0; i<QG.numBonds; i++)
+  for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
     os << "  " << GSL_IMAG(gsl_vector_complex_get(QG.LengthVector, i));
   }
