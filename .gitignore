@@ -5,7 +5,7 @@
 # Folders for temporary things and data
 data/
 data/*
-graph_defs/*
+alternate/*
 tests/*
 
 
