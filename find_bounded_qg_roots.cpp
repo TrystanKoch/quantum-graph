@@ -22,7 +22,6 @@
 
 #include "quantumgraph.h"
 #include "quantumgraphrootfinding.h"
-#include "qg-tetrahedron.h"
 
 #include <sstream>
 #include <limits>
