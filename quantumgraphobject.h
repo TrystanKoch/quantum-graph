@@ -278,8 +278,8 @@ class QuantumGraphObject: public QuantumGraph
 
 
     //
-    int GetBondIndexFromPointer(QuantumGraphBond*);
-    int GetNodeIndexFromPointer(QuantumGraphNode*);
+    int GetIndexForBond(QuantumGraphBond*);
+    int GetIndexForNode(QuantumGraphNode*);
 
 
 };
@@ -298,24 +298,71 @@ class QuantumGraphObject: public QuantumGraph
 /// QuantumGraphNode Class
 ///
 ///   
+///  Provides boundary conditions.
+///   The quantum graph is, at its core, a second-order differential
+///   equation, for which any solution needs boundary conditions. One
+///   can specify these boundary conditions in many ways, but in the end
+///   each set of boundary conditions is described by the scattering
+///   properties of at the nodes. As a wave from one bond travels into
+///   a node, some of it bounces back and some of it leaves the node
+///   through one of the other bonds. We use a scattering matrix to
+///   define how an incoming wave relates to the outgoing waves.
+///
+///   Each node must keep track of its scattering matrix. In fact, this
+///   is relatively easy. We can consider scattering from undirected 
+///   bond to undirected bond as long as 
+///
+///  Is a constituent of a quantum graph.
+///   Along with bonds, nodes make up the structure of the quantum
+///   graph. In fact, because of the mathematical simplicity of the
+///   bond-to-bond scattering model for the quantum graph, it is the
+///   node that determines how the graph is connected.
+///
+///   Each node must keep track of the 
 class QuantumGraphNode
 {
+
   private:
-    std::vector<QuantumGraphUndirectedBond*> ConnectedBonds;
-    gsl_matrix_complex* SMatrix;
-    unsigned int Valence;
+    //
+    //
+    std::vector<QuantumGraphUndirectedBond*> attached_undirected_bonds_;
+
+    //
+    //
+    gsl_matrix_complex* node_scattering_matrix_;
+
+    //
+    //
+    unsigned int valence_;
+
   public:
+    //
     QuantumGraphNode();
+
+    //
     QuantumGraphNode(gsl_matrix_complex*);
+
+    //
     ~QuantumGraphNode();
-    //QuantumGraphNode(const QuantumGraphNode&);
-    //std::vector<QuantumGraphNode&> GetConnectedNodes() const;
-    //std::vector<QuantumGraphBond&> GetOutgoingBonds() const;
+
+    //
     std::vector<QuantumGraphBond*> GetIncomingBonds();
-    std::vector<QuantumGraphUndirectedBond*> GetConnectedUBonds();
-    int GetBondIndexAtNodeFromPointer(QuantumGraphBond*);
-    void ConnectToBond(QuantumGraphUndirectedBond*);
-    gsl_complex GetMatrixElement(int, int);
+
+    //
+    int GetIndexForBond(QuantumGraphBond*);
+
+    //
+    void AttachToBond(QuantumGraphUndirectedBond*);
+
+    //
+    gsl_complex node_scattering_matrix_element(int, int);
+
+    //
+    std::vector<QuantumGraphUndirectedBond*> 
+    attached_undirected_bonds();
+
+    //
+    unsigned int valence() const;
 };
 
 
@@ -334,16 +381,14 @@ class QuantumGraphNode
 class QuantumGraphBond
 {
   private:
-    gsl_complex ComplexLength;
-    QuantumGraphNode* StartNode;
-    QuantumGraphNode* EndNode;
+    gsl_complex complex_length_;
+    QuantumGraphNode* start_node_;
+    QuantumGraphNode* end_node_;
   public:
-    //QuantumGraphBond();
-    //QuantumGraphBond(const QuantumGraphBond&);
     QuantumGraphBond(QuantumGraphNode*, QuantumGraphNode*, gsl_complex);
-    QuantumGraphNode* GetStartNode();
-    QuantumGraphNode* GetEndNode();
-    gsl_complex GetBondLength();
+    QuantumGraphNode* start_node();
+    QuantumGraphNode* end_node();
+    gsl_complex complex_length();
 };
 
 
@@ -362,18 +407,15 @@ class QuantumGraphBond
 class QuantumGraphUndirectedBond
 {
   private:
-    QuantumGraphBond ForwardBond;
-    QuantumGraphBond BackwardBond;
+    QuantumGraphBond forward_bond_;
+    QuantumGraphBond backward_bond_;
     void CheckBondLengths();
   public:
-    //QuantumGraphUndirectedBond();
-    //QuantumGraphUndirectedBond(const QuantumGraphUndirectedBond&);
-    QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*, gsl_complex);
-    QuantumGraphBond* GetForwardBond();
-    QuantumGraphBond* GetBackwardBond();
+    QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*,
+                               gsl_complex);
     bool HasDirectedBond(QuantumGraphBond*);
-    //std::vector<QuantumGraphNode&> GetAttachedNodes const;
-    
+    QuantumGraphBond* forward_bond();
+    QuantumGraphBond* backward_bond();
 };
 
 

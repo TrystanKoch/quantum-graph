@@ -73,8 +73,8 @@ void QuantumGraphObject::Connect(unsigned int a, unsigned int b,
 {
   undirected_bonds_.push_back(
                new QuantumGraphUndirectedBond(nodes_[a], nodes_[b], L));
-  nodes_[a]->ConnectToBond(undirected_bonds_.back());
-  nodes_[b]->ConnectToBond(undirected_bonds_.back());
+  nodes_[a]->AttachToBond(undirected_bonds_.back());
+  nodes_[b]->AttachToBond(undirected_bonds_.back());
 }
 
 
@@ -106,18 +106,18 @@ QuantumGraphObject::~QuantumGraphObject()
 // Note that in this convention, the index "i" of the forward bond in
 // the undirected bond "b" is i=2*b, while the backward bond is given
 // index i=2*b + 1. 
-int QuantumGraphObject::GetBondIndexFromPointer(QuantumGraphBond* QGBP)
+int QuantumGraphObject::GetIndexForBond(QuantumGraphBond* QGBP)
 {
   // Take every undirected bond in our list.
   for (unsigned int ub=0; ub<undirected_bonds_.size(); ub++)
   {
     // First check to see if the forward bond has the pointer we're 
     // looking for.
-    if ((undirected_bonds_[ub]->GetForwardBond()) == QGBP)
+    if ((undirected_bonds_[ub]->forward_bond()) == QGBP)
     {
       return 2 * ub;
     } // Then check the backward bond.
-    else if ((undirected_bonds_[ub]->GetBackwardBond()) == QGBP)
+    else if ((undirected_bonds_[ub]->backward_bond()) == QGBP)
     {
       return 2 * ub + 1;
     }
@@ -132,7 +132,7 @@ int QuantumGraphObject::GetBondIndexFromPointer(QuantumGraphBond* QGBP)
 // somewhere else we need to know what the index of that bond is.
 //
 // less important than the bond version, but still useful.
-int QuantumGraphObject::GetNodeIndexFromPointer(QuantumGraphNode* QGNP)
+int QuantumGraphObject::GetIndexForNode(QuantumGraphNode* QGNP)
 {
   for (unsigned int n=0; n<nodes_.size(); n++)
   {
@@ -207,24 +207,24 @@ void QuantumGraphObject::UpdateQuantumGraph()
 
     // We need to know what directed bond row i refers to. We get the
     // pointer that refers to the object.
-    QuantumGraphBond* ForwardBond 
-        = undirected_bonds_[b]->GetForwardBond();
+    QuantumGraphBond* forward_bond
+        = undirected_bonds_[b]->forward_bond();
 
     // Our new Length vector contains the length information stored in
     // the directed bond we're referring to.
-    gsl_vector_complex_set(newLVector, i, ForwardBond->GetBondLength());
+    gsl_vector_complex_set(newLVector, i, forward_bond->complex_length());
 
 
     // Our directed bond can tell us which node it starts at.
-    QuantumGraphNode* FStartNodeP = ForwardBond->GetStartNode();
+    QuantumGraphNode* FStartNode = forward_bond->start_node();
 
     // Our starting node can tell us which directed bonds arrive there.
     std::vector<QuantumGraphBond*> FIn 
-        = FStartNodeP->GetIncomingBonds();
+        = FStartNode->GetIncomingBonds();
 
     // And we need to know what row in the node scattering matrix
     // corresponds to the outgoing bond.
-    l = FStartNodeP->GetBondIndexAtNodeFromPointer(ForwardBond);
+    l = FStartNode->GetIndexForBond(forward_bond);
 
     // For each bond incoming to the start node, we find its 
     // corresponding graph scattering matrix index j. Luckily, the order
@@ -237,26 +237,29 @@ void QuantumGraphObject::UpdateQuantumGraph()
        // before or after the other in this list does not matter as long
        // as we're consistent. For now, I assume the Forward bond is the
        // first one.
-       int j = GetBondIndexFromPointer(FIn[m]);
+       int j = GetIndexForBond(FIn[m]);
 
        // Now actually build our graph scattering matrix's row i.
-       gsl_complex Sij = FStartNodeP->GetMatrixElement(l, m);
+       gsl_complex Sij 
+           = FStartNode->node_scattering_matrix_element(l, m);
        gsl_matrix_complex_set(newSMatrix, i, j, Sij);
     }
 
-    // Now Do exactly the same for the Backward Bond
+    // Now do exactly the same for the Backward Bond
     i = (2*b)+1; // Only difference: the backward bond is the next row
-    QuantumGraphBond* BackwardBond 
-        = undirected_bonds_[b]->GetBackwardBond();
-    gsl_vector_complex_set(newLVector,i,BackwardBond->GetBondLength());
-    QuantumGraphNode* BStartNodeP = BackwardBond->GetStartNode();
+    QuantumGraphBond* backward_bond 
+        = undirected_bonds_[b]->backward_bond();
+    gsl_vector_complex_set(newLVector,i, 
+                           backward_bond->complex_length());
+    QuantumGraphNode* BStartNode = backward_bond->start_node();
     std::vector<QuantumGraphBond*> BIn 
-        = BStartNodeP->GetIncomingBonds();
-    l = BStartNodeP->GetBondIndexAtNodeFromPointer(BackwardBond);
+        = BStartNode->GetIncomingBonds();
+    l = BStartNode->GetIndexForBond(backward_bond);
     for (unsigned int m=0; m<BIn.size(); m++)
     {
-       int j = GetBondIndexFromPointer(BIn[m]);
-       gsl_complex Sij = BStartNodeP->GetMatrixElement(l, m);
+       int j = GetIndexForBond(BIn[m]);
+       gsl_complex Sij 
+           = BStartNode->node_scattering_matrix_element(l, m);
        gsl_matrix_complex_set(newSMatrix, i, j, Sij);
     }
 
@@ -289,75 +292,112 @@ void QuantumGraphObject::UpdateQuantumGraph()
 ///
 /// QuantumGraphNode Class
 ///
-///   
-QuantumGraphNode::QuantumGraphNode(gsl_matrix_complex* SS)
+///
+
+// Does no checking for good input.
+// Basically just copies whatever scattering matrix you gave it. It's up
+// to the user to make sure this is set in a way that makes sense to the
+// physical problem.
+QuantumGraphNode::QuantumGraphNode(
+    gsl_matrix_complex* node_scattering_matrix
+)
 {
-  Valence = SS->size1;
-  SMatrix = gsl_matrix_complex_calloc(SS->size1, SS->size2);
-  gsl_matrix_complex_memcpy(SMatrix, SS);
+  valence_ = node_scattering_matrix->size1;
+  node_scattering_matrix_ 
+      = gsl_matrix_complex_calloc(node_scattering_matrix->size1,
+                                  node_scattering_matrix->size2);
+  gsl_matrix_complex_memcpy(node_scattering_matrix_,
+                            node_scattering_matrix);
 }
 
+// The default constructor means that there's nothing to describe and
+// no connections to worry about
 QuantumGraphNode::QuantumGraphNode()
 {
-  Valence = 0;
-  SMatrix = gsl_matrix_complex_calloc(0, 0);
+  valence_ = 0;
+  node_scattering_matrix_ = gsl_matrix_complex_calloc(0, 0);
 }
 
+// Have to delete the gsl_matrix_complex memory we allocated in the
+// constructor.
 QuantumGraphNode::~QuantumGraphNode()
 {
-  gsl_matrix_complex_free(SMatrix);
+  gsl_matrix_complex_free(node_scattering_matrix_);
 }
 
-void QuantumGraphNode::ConnectToBond(QuantumGraphUndirectedBond* QGUB)
+// Just keep track of the pointers to the bonds the node's attached to 
+// since the nodes are themselves children of the QuantumGraphObject.
+void QuantumGraphNode::AttachToBond(QuantumGraphUndirectedBond* QGUB)
 {
-  ConnectedBonds.push_back(QGUB);
+  attached_undirected_bonds_.push_back(QGUB);
 }
 
-
+// We don't keep track of the bonds that are attached to a node, only
+// the undirected bonds. So we have to ask each undirected bond which
+// of its bonds stores a pointer to this node as it's end_node_ member.
 std::vector<QuantumGraphBond*> QuantumGraphNode::GetIncomingBonds()
 {
-  std::vector<QuantumGraphBond*> InBondsPVec;
-  for (unsigned int m=0; m<ConnectedBonds.size(); m++)
+  std::vector<QuantumGraphBond*> IncomingBonds;
+
+  // Each undirected bond is attached to the node, so either the forward
+  // or the backward bond ends at this node
+  for (unsigned int m=0; m<attached_undirected_bonds_.size(); m++)
   {
-    if (ConnectedBonds[m]->GetForwardBond()->GetEndNode() == this)
+    // If a bond ends at this node, it stores a pointer to this node.
+    // by checking the end_node_ pointer for both the forward...
+    if (attached_undirected_bonds_[m]->forward_bond()->end_node()
+            == this)
     {
-      InBondsPVec.push_back(ConnectedBonds[m]->GetForwardBond());
-    }
-    else if (ConnectedBonds[m]->GetBackwardBond()->GetEndNode() == this)
+      IncomingBonds.push_back(attached_undirected_bonds_[m]
+                                  ->forward_bond());
+    } // ...and backward...
+    else if (attached_undirected_bonds_[m]->backward_bond()->end_node()
+                 == this)
     {
-      InBondsPVec.push_back(ConnectedBonds[m]->GetBackwardBond());
+      IncomingBonds.push_back(attached_undirected_bonds_[m]
+                                  ->backward_bond());
     }
+    // ...bonds, we can make a vector of pointers to the incoming bonds
+    // and return it to functions that need that information to build
+    // the scattering matrix.
   }
 
-  return InBondsPVec;
+  return IncomingBonds;
 }
 
 
-int 
-QuantumGraphNode::GetBondIndexAtNodeFromPointer(QuantumGraphBond* QGBP)
+// Pretty straight forward. Iterate over all the attached undirected 
+// bonds and see if the bond is in one of them.
+int QuantumGraphNode::GetIndexForBond(QuantumGraphBond* QGBP)
 {
-  for (unsigned int m=0; m<ConnectedBonds.size(); m++)
+  for (unsigned int m=0; m<attached_undirected_bonds_.size(); m++)
   {
-    if (ConnectedBonds[m]->HasDirectedBond(QGBP))
+    if (attached_undirected_bonds_[m]->HasDirectedBond(QGBP))
     {
+      // Since the index of the bond in the scattering matrix is just
+      // the position in the vector, return that position
       return m;
     }
   }
   
-  return -10;
+  // Failure returns something we can't use.
+  return -1;
 }
 
 
-
-gsl_complex QuantumGraphNode::GetMatrixElement(int l, int m)
+// Accessor Method... sort of... since I don't want to pass a pointer to
+// data, which would remove encapsulation.
+gsl_complex QuantumGraphNode::node_scattering_matrix_element(int l, int m)
 {
-  return gsl_matrix_complex_get(SMatrix, l, m);
+  return gsl_matrix_complex_get(node_scattering_matrix_, l, m);
 }
 
+
+// Accessor Method
 std::vector<QuantumGraphUndirectedBond*>
-QuantumGraphNode::GetConnectedUBonds()
+QuantumGraphNode::attached_undirected_bonds()
 {
-  return ConnectedBonds;
+  return attached_undirected_bonds_;
 }
 
 
@@ -370,29 +410,35 @@ QuantumGraphNode::GetConnectedUBonds()
 ///
 /// QuantumGraphBond Class
 ///
-/// 
-QuantumGraphBond::QuantumGraphBond(QuantumGraphNode* Start, 
-                                   QuantumGraphNode* End, 
-                                   gsl_complex LL)
+///
+
+// Straightforward. Remember that we only store pointers that are 
+// children of the QuantumGraphObject.
+QuantumGraphBond::QuantumGraphBond(QuantumGraphNode* start_node, 
+                                   QuantumGraphNode* end_node, 
+                                   gsl_complex complex_length)
 {
-  StartNode = Start;
-  EndNode = End;
-  ComplexLength = LL;
+  start_node_ = start_node;
+  end_node_ = end_node;
+  complex_length_ = complex_length;
 }
 
-QuantumGraphNode* QuantumGraphBond::GetStartNode()
+// Accessor Method
+QuantumGraphNode* QuantumGraphBond::start_node()
 {
-  return StartNode;
+  return start_node_;
 }
 
-QuantumGraphNode* QuantumGraphBond::GetEndNode()
+// Accessor Method
+QuantumGraphNode* QuantumGraphBond::end_node()
 {
-  return EndNode;
+  return end_node_;
 }
 
-gsl_complex QuantumGraphBond::GetBondLength()
+// Accessor Method
+gsl_complex QuantumGraphBond::complex_length()
 {
-  return ComplexLength;
+  return complex_length_;
 }
 
 
@@ -403,21 +449,26 @@ gsl_complex QuantumGraphBond::GetBondLength()
 ///
 /// QuantumGraphUndirectedBond Class
 ///
-///  
+/// 
+
+
+// Note that the undirected bond is the parent of two bonds. Other
+// classes have to call this object's methods to get information about
+// which bonds are stored here.
 QuantumGraphUndirectedBond::QuantumGraphUndirectedBond(
-  QuantumGraphNode* ForwardStart,
-  QuantumGraphNode* ForwardEnd, 
-  gsl_complex LL
-) :ForwardBond(ForwardStart, ForwardEnd, LL), 
-   BackwardBond(ForwardEnd, ForwardStart, LL)
+    QuantumGraphNode* node_one,
+    QuantumGraphNode* node_two, 
+    gsl_complex complex_length
+) :forward_bond_(node_one, node_two, complex_length), 
+   backward_bond_(node_two, node_one, complex_length)
 {
 }
 
 
-
+// 
 bool QuantumGraphUndirectedBond::HasDirectedBond(QuantumGraphBond* QGB)
 {
-  if ((QGB == &ForwardBond) or (QGB == &BackwardBond))
+  if ((QGB == &forward_bond_) or (QGB == &backward_bond_))
   {
     return true;
   }
@@ -427,13 +478,17 @@ bool QuantumGraphUndirectedBond::HasDirectedBond(QuantumGraphBond* QGB)
   }
 }
 
-QuantumGraphBond* QuantumGraphUndirectedBond::GetForwardBond()
+
+// Accessor method.
+QuantumGraphBond* QuantumGraphUndirectedBond::forward_bond()
 {
-  return &ForwardBond;
+  return &forward_bond_;
 }
 
-QuantumGraphBond* QuantumGraphUndirectedBond::GetBackwardBond()
+
+// Accessor method.
+QuantumGraphBond* QuantumGraphUndirectedBond::backward_bond()
 {
-  return &BackwardBond;
+  return &backward_bond_;
 }
 
