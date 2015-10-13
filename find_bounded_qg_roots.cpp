@@ -70,7 +70,8 @@ int main(int argc, char* argv[])
     ss >> BB.imagMax;
     
     root = newtonRootFinderQRNG(BB, qrng, QG);
-    std::cout << GSL_REAL(root) << "  " << GSL_IMAG(root) << "    " << gsl_complex_abs(QG.characteristic(root))<<std::endl;
+    std::cout << GSL_REAL(root) << "  " << GSL_IMAG(root) << "    " 
+              << gsl_complex_abs(QG.Characteristic(root)) << std::endl;
     count++;
   }
   std::clog << "Roots Polished: " << count << std::endl;

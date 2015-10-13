@@ -108,27 +108,27 @@ class QuantumGraph
     // The scattering matrix describing the vertex scattering of the
     // quantum graph. May be subunitary in general, for lossy vertex
     // conditions. Unitarity implies no loss at the vertices.
-    gsl_matrix_complex* SMatrix;
+    gsl_matrix_complex* scattering_matrix_;
 
 
     // A list of electrical lengths for the bonds in the quantum graph.
     // A real length coresponds to lossless bonds, while a complex
     // length coresponds to a uniform loss along the bond.
-    gsl_vector_complex* LengthVector;
+    gsl_vector_complex* lengths_;
 
 
-    // A vector corresponding to -i*LengthVector.
+    // A vector corresponding to -i*lengths_.
     // Because these values show up so often and multiplication requires
     // additional work, the class carries this member for efficiency.
     // Keeping this in vector form lets us skip a matrix multiplication.
-    gsl_vector_complex* negImaginaryLengthVector;
+    gsl_vector_complex* negative_imaginary_lengths_;
 
 
-    // The sum of the lengths in LengthVector, multiplied by i. Again,
+    // The sum of the lengths in lengths_, multiplied by i. Again,
     // This data member exists because the quantity shows up so often
     // that its precalculation saves a noticeable amount of time even
     // though it is not the bottleneck.
-    gsl_complex posImaginaryLengthVectorSum;
+    gsl_complex positive_imaginary_lengths_sum_;
     
 
     // Checks that a matrix has the dimensions of the number of bonds.
@@ -139,7 +139,7 @@ class QuantumGraph
     void allocGraphMemory(unsigned int);
 
 
-    // Creates negImaginaryLengthVector and posImaginaryLengthVectorSum
+    // Creates negative_imaginary_lengths_ and positive_imaginary_lengths_sum_
     // from the input data. Should be called in every constructor.
     void makeInternals();
 
@@ -168,7 +168,7 @@ class QuantumGraph
 
 
   public:
-    // Default Constructor. Sets the SMatrix and Length Vector to a
+    // Default Constructor. Sets the S Matrix and Length Vector to a
     // single entry which is zero.
     QuantumGraph();
 
@@ -215,7 +215,7 @@ class QuantumGraph
     //                        that wavenumber.
     //
     // This finds Det[T^{-1}(z)-S].
-    gsl_complex characteristic(const gsl_complex) const;
+    gsl_complex Characteristic(const gsl_complex) const;
 
 
     // Finds the eigenvector corresponding to the complex wavenumber z.
@@ -234,7 +234,7 @@ class QuantumGraph
     // While this is a step in finding normalized eigenfunctions, the
     // eventual normalization will rely on a physical analog to a
     // particular problem.
-    gsl_vector_complex* eigenvector(const gsl_complex) const;
+    gsl_vector_complex* Eigenvector(const gsl_complex) const;
 
 
     // Checks the eigenvector by multiplying it by the T^-1 - S 
@@ -253,8 +253,8 @@ class QuantumGraph
     // This is less for computing things of interest, and more of a
     // check that all the above steps worked out when finding the
     // eigenvector.
-    gsl_vector_complex* eigenvectorCheck(const gsl_complex, 
-                                         const gsl_vector_complex*) const;
+    double EigenvectorCheck(const gsl_complex, 
+                            const gsl_vector_complex*) const;
 
 
     // Given an initial guess z, computes z-f(z)/f'(z), to use in
@@ -273,7 +273,7 @@ class QuantumGraph
     // method is a part of the class because it is easier to perform the
     // singular value decomposition with access to the private data
     // members.
-    gsl_complex newtonStep(const gsl_complex) const;
+    gsl_complex NewtonStep(const gsl_complex) const;
 
 
 

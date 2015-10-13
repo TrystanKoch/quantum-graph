@@ -120,11 +120,11 @@ std::vector<double> makeArgSumVector(SideType side, double sideConstant,
   if (side == Bottom || side == Top)
   {
     GSL_SET_COMPLEX(&z, sideStart, sideConstant);
-    fOld = QG.characteristic(z);
+    fOld = QG.Characteristic(z);
     for (unsigned long long int i=1; i<numPoints; i++)
     {
       GSL_SET_REAL(&z , sideStart + i * spacing);
-      fNew = QG.characteristic(z);
+      fNew = QG.Characteristic(z);
       argDiffSum += gsl_complex_arg(gsl_complex_div(fNew, fOld));
       argSumVector.push_back(argDiffSum);
       fOld = fNew;
@@ -134,11 +134,11 @@ std::vector<double> makeArgSumVector(SideType side, double sideConstant,
   else if (side == Right || side == Left)
   {
     GSL_SET_COMPLEX(&z, sideConstant, sideStart);
-    fOld = QG.characteristic(z);
+    fOld = QG.Characteristic(z);
     for (unsigned long long int i=1; i<numPoints; i++)
     {
       GSL_SET_IMAG(&z , sideStart + i * spacing);
-      fNew = QG.characteristic(z);
+      fNew = QG.Characteristic(z);
       argDiffSum += gsl_complex_arg(gsl_complex_div(fNew, fOld));
       argSumVector.push_back(argDiffSum);
       fOld = fNew;
@@ -353,7 +353,7 @@ gsl_complex newtonRootFinderQRNG(BoundingBox& BB, gsl_qrng * qrng,
   do
   {
     zOld = zNew;  
-    zNew = QG.newtonStep(zOld);
+    zNew = QG.NewtonStep(zOld);
     if (outOfBoundary(zNew,BB))
     {
       gsl_qrng_get(qrng, x);

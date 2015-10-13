@@ -63,17 +63,17 @@ QuantumGraph::QuantumGraph()
 }
 
 // Constructor from GSL types
-QuantumGraph::QuantumGraph(const gsl_vector_complex* LL,
-                           const gsl_matrix_complex* SS)
+QuantumGraph::QuantumGraph(const gsl_vector_complex* lengths,
+                           const gsl_matrix_complex* scattering_matrix)
 {
-  num_bonds_ = SS->size1;
+  num_bonds_ = scattering_matrix->size1;
 
-  if (LL->size != num_bonds_)
+  if (lengths->size != num_bonds_)
   {
     std::clog << "Length Vector and S Matrix must be same dimension." 
               << std::endl;
   }
-  else if (SS->size2 != num_bonds_)
+  else if (scattering_matrix->size2 != num_bonds_)
   {
     std::clog << "S Matrix must be square." 
               << std::endl;
@@ -81,8 +81,8 @@ QuantumGraph::QuantumGraph(const gsl_vector_complex* LL,
 
   allocGraphMemory(num_bonds_);
 
-  gsl_matrix_complex_memcpy(SMatrix, SS);
-  gsl_vector_complex_memcpy(LengthVector, LL);
+  gsl_matrix_complex_memcpy(scattering_matrix_, scattering_matrix);
+  gsl_vector_complex_memcpy(lengths_, lengths);
 
   makeInternals();
 }
@@ -91,7 +91,7 @@ QuantumGraph::QuantumGraph(const gsl_vector_complex* LL,
 
 
 // Constructor from vectors of doubles representing real and imaginary
-// parts of LengthVector and SMatrix.
+// parts of lengths_ and scattering_matrix_.
 QuantumGraph::QuantumGraph(const std::vector<double>LLreal, 
                            const std::vector<double>LLimag,
                            const std::vector<std::vector<double>> SSreal,
@@ -119,21 +119,21 @@ QuantumGraph::QuantumGraph(const std::vector<double>LLreal,
   // Okay, allocate the memory for data members.
   allocGraphMemory(num_bonds_);
   
-  // Make SMatrix
+  // Make scattering_matrix_
   for (unsigned int i=0; i<num_bonds_; i++)
   {
       for (unsigned int j=0; j<num_bonds_; j++)
       {
           gsl_complex Sij = gsl_complex_rect(SSreal[i][j],SSimag[i][j]);
-          gsl_matrix_complex_set(SMatrix, i, j, Sij);
+          gsl_matrix_complex_set(scattering_matrix_, i, j, Sij);
       }
   }
 
-  // Make LengthVector
+  // Make lengths_
   for (unsigned int j=0; j<num_bonds_; j++)
   {
       gsl_complex Lj = gsl_complex_rect(LLreal[j], LLimag[j]);
-      gsl_vector_complex_set(LengthVector, j, Lj);
+      gsl_vector_complex_set(lengths_, j, Lj);
   }
 
   makeInternals();
@@ -255,7 +255,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
     {
       gsl_complex Sij = gsl_complex_rect(SMatrixReal[i][j],
                                          SMatrixImag[i][j]);
-      gsl_matrix_complex_set(SMatrix, i, j, Sij);
+      gsl_matrix_complex_set(scattering_matrix_, i, j, Sij);
     }
   }
 
@@ -263,7 +263,7 @@ QuantumGraph::QuantumGraph(std::vector<std::string> header)
   {
     gsl_complex Li = gsl_complex_rect(LengthsReal[i],
                                       LengthsImag[i]);
-    gsl_vector_complex_set(LengthVector, i, Li);
+    gsl_vector_complex_set(lengths_, i, Li);
   }
 
   makeInternals();
@@ -278,8 +278,8 @@ QuantumGraph::QuantumGraph(const QuantumGraph& QG)
   num_bonds_ = QG.num_bonds_;
   allocGraphMemory(num_bonds_);
 
-  gsl_matrix_complex_memcpy(SMatrix, QG.SMatrix);
-  gsl_vector_complex_memcpy(LengthVector, QG.LengthVector);
+  gsl_matrix_complex_memcpy(scattering_matrix_, QG.scattering_matrix_);
+  gsl_vector_complex_memcpy(lengths_, QG.lengths_);
 
   makeInternals();
 }
@@ -313,8 +313,8 @@ void QuantumGraph::makeInternals()
 // So we don't have to do this on every computation.
 void QuantumGraph::makeNegImaginaryLengthVector()
 {
-  gsl_vector_complex_memcpy(negImaginaryLengthVector, LengthVector);
-  gsl_vector_complex_scale(negImaginaryLengthVector, 
+  gsl_vector_complex_memcpy(negative_imaginary_lengths_, lengths_);
+  gsl_vector_complex_scale(negative_imaginary_lengths_, 
                            gsl_complex_rect(0, -1) );
 }
 
@@ -327,10 +327,10 @@ void QuantumGraph::makePosImaginaryLengthVectorSum()
   gsl_complex LengthSum = GSL_COMPLEX_ZERO;
   for (unsigned int i=0; i<num_bonds_; i++)
   {
-    gsl_complex Li = gsl_vector_complex_get(LengthVector, i);
+    gsl_complex Li = gsl_vector_complex_get(lengths_, i);
     LengthSum = gsl_complex_add(LengthSum, Li);
   }
-  posImaginaryLengthVectorSum 
+  positive_imaginary_lengths_sum_ 
     = gsl_complex_mul(LengthSum, gsl_complex_rect(0, 1));
 }
 
@@ -360,9 +360,9 @@ bool QuantumGraph::checkMatrixSize(std::vector<std::vector<double>> M)
 
 void QuantumGraph::allocGraphMemory(unsigned int N)
 {
-  SMatrix = gsl_matrix_complex_calloc(N,N);
-  LengthVector = gsl_vector_complex_calloc(N);
-  negImaginaryLengthVector = gsl_vector_complex_calloc(N);
+  scattering_matrix_ = gsl_matrix_complex_calloc(N,N);
+  lengths_ = gsl_vector_complex_calloc(N);
+  negative_imaginary_lengths_ = gsl_vector_complex_calloc(N);
 }
 
 
@@ -370,9 +370,9 @@ void QuantumGraph::allocGraphMemory(unsigned int N)
 
 void QuantumGraph::freeGraphMemory()
 {
-  gsl_matrix_complex_free(SMatrix);
-  gsl_vector_complex_free(LengthVector);
-  gsl_vector_complex_free(negImaginaryLengthVector);
+  gsl_matrix_complex_free(scattering_matrix_);
+  gsl_vector_complex_free(lengths_);
+  gsl_vector_complex_free(negative_imaginary_lengths_);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -400,8 +400,8 @@ void QuantumGraph::setGraph(const gsl_vector_complex* LL,
 
   allocGraphMemory(num_bonds_);
 
-  gsl_matrix_complex_memcpy(SMatrix, SS);
-  gsl_vector_complex_memcpy(LengthVector, LL);
+  gsl_matrix_complex_memcpy(scattering_matrix_, SS);
+  gsl_vector_complex_memcpy(lengths_, LL);
 
   makeInternals();
 }
@@ -413,15 +413,15 @@ void QuantumGraph::setGraph(const gsl_vector_complex* LL,
 
 // While this function will have zeros, it will not be strictly real
 // along the real axis. Only a complex zero-finding algorithm will work.
-gsl_complex QuantumGraph::characteristic(const gsl_complex z) const
+gsl_complex QuantumGraph::Characteristic(const gsl_complex z) const
 {
   gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
-  gsl_matrix_complex_memcpy(D, SMatrix);
+  gsl_matrix_complex_memcpy(D, scattering_matrix_);
 
   for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
-      = gsl_vector_complex_get(negImaginaryLengthVector, j);
+      = gsl_vector_complex_get(negative_imaginary_lengths_, j);
     gsl_complex Tj = gsl_complex_exp(gsl_complex_mul(negILj, z));
     gsl_matrix_complex_set(D, j, j, gsl_complex_negative(Tj));
   }
@@ -442,15 +442,15 @@ gsl_complex QuantumGraph::characteristic(const gsl_complex z) const
 
 
 
-gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
+gsl_vector_complex* QuantumGraph::Eigenvector(const gsl_complex z) const
 {
   gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
-  gsl_matrix_complex_memcpy(D, SMatrix);
+  gsl_matrix_complex_memcpy(D, scattering_matrix_);
 
   for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
-      = gsl_vector_complex_get(negImaginaryLengthVector, j);
+      = gsl_vector_complex_get(negative_imaginary_lengths_, j);
     gsl_complex Tj = gsl_complex_exp(gsl_complex_mul(negILj, z));
     gsl_matrix_complex_set(D, j, j, gsl_complex_negative(Tj));
   }
@@ -532,12 +532,12 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   // corresponds to the eigenvector of the matrix that corresponds
   // to the singular value. The function returns this whether the
   // smallest singular value was close to zero or not.
-  gsl_vector_complex* Eigenvector = gsl_vector_complex_calloc(num_bonds_);
+  gsl_vector_complex* eigenvector = gsl_vector_complex_calloc(num_bonds_);
   for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex VLastj 
       = gsl_matrix_complex_get(VT, lastRow, j);
-    gsl_vector_complex_set(Eigenvector, j, 
+    gsl_vector_complex_set(eigenvector, j, 
                            gsl_complex_conjugate(VLastj));
   }
 
@@ -549,24 +549,24 @@ gsl_vector_complex* QuantumGraph::eigenvector(const gsl_complex z) const
   gsl_matrix_complex_free(VT);
   gsl_vector_free(S);
 
-  return Eigenvector;
+  return eigenvector;
 }
 
 
 
-gsl_vector_complex* 
-QuantumGraph::eigenvectorCheck(const gsl_complex z, const gsl_vector_complex* V)
+double
+QuantumGraph::EigenvectorCheck(const gsl_complex z, const gsl_vector_complex* V)
 const
 {
   gsl_vector_complex* resultVec = gsl_vector_complex_calloc(num_bonds_);
 
   gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
-  gsl_matrix_complex_memcpy(D, SMatrix);
+  gsl_matrix_complex_memcpy(D, scattering_matrix_);
 
   for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
-      = gsl_vector_complex_get(negImaginaryLengthVector, j);
+      = gsl_vector_complex_get(negative_imaginary_lengths_, j);
     gsl_complex Tj = gsl_complex_exp(gsl_complex_mul(negILj, z));
     gsl_matrix_complex_set(D, j, j, gsl_complex_negative(Tj));
   }
@@ -577,7 +577,7 @@ const
   // Clean up.
   gsl_matrix_complex_free(D);
 
-  return resultVec;
+  return gsl_blas_dznrm2(resultVec);
 }
 
 
@@ -585,16 +585,16 @@ const
 // Uses much of the same code as the eigenvector code, in the beginning
 // but after the SVD is found, that is used to find the value of the
 // characteristic function divide by its derivative.
-gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
+gsl_complex QuantumGraph::NewtonStep(const gsl_complex z) const
 {
   gsl_matrix_complex* D = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
   gsl_vector_complex* T = gsl_vector_complex_calloc(num_bonds_);
-  gsl_matrix_complex_memcpy(D, SMatrix);
+  gsl_matrix_complex_memcpy(D, scattering_matrix_);
 
   for (unsigned int j=0; j<num_bonds_; j++)
   {
     gsl_complex negILj
-      = gsl_vector_complex_get(negImaginaryLengthVector, j);
+      = gsl_vector_complex_get(negative_imaginary_lengths_, j);
     gsl_complex Tj = gsl_complex_exp(gsl_complex_mul(negILj, z));
     gsl_matrix_complex_set(D, j, j, gsl_complex_negative(Tj));
     gsl_vector_complex_set(T, j, Tj);
@@ -665,7 +665,7 @@ gsl_complex QuantumGraph::newtonStep(const gsl_complex z) const
   // End SVD work
 
   // T is now equal to LT.
-  gsl_vector_complex_mul(T, LengthVector);
+  gsl_vector_complex_mul(T, lengths_);
 
   // Now we find the trace of D^{-1}D' using the SVD, the length vector,
   // and the T vector.
@@ -727,7 +727,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
     os << "#    ";
     for (unsigned int j=0; j<QG.num_bonds_; j++)
     {
-      os << "  " << GSL_REAL(gsl_matrix_complex_get(QG.SMatrix, i, j));
+      os << "  " << GSL_REAL(gsl_matrix_complex_get(QG.scattering_matrix_, i, j));
     }
     os << std::endl;
   }
@@ -739,7 +739,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
     os << "#    ";
     for (unsigned int j=0; j<QG.num_bonds_; j++)
     {
-      os << "  " << GSL_IMAG(gsl_matrix_complex_get(QG.SMatrix, i, j));
+      os << "  " << GSL_IMAG(gsl_matrix_complex_get(QG.scattering_matrix_, i, j));
     }
     os << std::endl;
   }
@@ -749,7 +749,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   os << "#    ";
   for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
-    os << "  " << GSL_REAL(gsl_vector_complex_get(QG.LengthVector, i));
+    os << "  " << GSL_REAL(gsl_vector_complex_get(QG.lengths_, i));
   }
   os << std::endl;
 
@@ -758,7 +758,7 @@ std::ostream & operator<<(std::ostream& os, const QuantumGraph& QG)
   os << "#    ";
   for (unsigned int i=0; i<QG.num_bonds_; i++)
   {
-    os << "  " << GSL_IMAG(gsl_vector_complex_get(QG.LengthVector, i));
+    os << "  " << GSL_IMAG(gsl_vector_complex_get(QG.lengths_, i));
   }
   os << std::endl;
 

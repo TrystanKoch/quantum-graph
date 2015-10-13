@@ -77,7 +77,7 @@ int main()
   
   // Instantiate the vectors
   std::clog << std::endl;
-  std::clog << "Making Initial Boundary..." << std::endl;
+  std::clog << "Making Initial Boundary." << std::endl;
   BoundingBox initialBoundary;
   initialBoundary = initializeBoundingBox(X_MIN, 
                                           X_MAX,
@@ -102,7 +102,7 @@ int main()
   
   std::cout << QG << std::endl;
   // We want to test the recursive root bounding algorithm. So 
-  std::clog << "Recursively Finding Complex Root Bounds..." << std::endl;
+  std::clog << "Recursively Finding Complex Root Bounds" << std::endl;
   unsigned long long int total 
       = recursiveRootBounding(initialBoundary, QG);
 
