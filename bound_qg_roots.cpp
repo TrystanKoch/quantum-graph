@@ -77,7 +77,7 @@ int main()
   
   // Instantiate the vectors
   std::clog << std::endl;
-  std::clog << "Making Initial Boundary." << std::endl;
+  std::clog << "Making Initial Boundary..." << std::endl;
   BoundingBox initialBoundary;
   initialBoundary = initializeBoundingBox(X_MIN, 
                                           X_MAX,

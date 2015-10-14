@@ -196,7 +196,14 @@ class QuantumGraphBond;
 ///   QGO.Node[0], if it was the first node added.
 ///
 ///  -Adding Bonds-
-///   
+///   Once the nodes are added, you may add bonds by connecting the
+///   nodes. You may call
+///       QGO.Connect(a,b,L)
+///   to connect the "ath" node to the "bth" node with a bond of length
+///   L. In this case, L is stored as a complex number, whether it is
+///   a lossless bond or not. It is up to the user to ensure that each
+///   node is connected to other nodes in the correct manner, and that
+///   no two nodes are connected by more than one undirected bond.
 ///
 ///  -Updating Matrices-
 ///   When the QuantumGraphObject is complete, and you have verified
@@ -262,15 +269,15 @@ class QuantumGraphObject: public QuantumGraph
     ~QuantumGraphObject();
 
 
-
     // Creates a QuantumGraphNode Object with the argument as the node's
     // scattering matrix. This Node is dynamically created in memory and
     // the pointer is then stored in the vector of Node pointers.
-    void AddNode(gsl_matrix_complex*);
+    void AddNode(const gsl_matrix_complex*);
 
 
     // 
-    void Connect(unsigned int, unsigned int, gsl_complex);
+    void Connect(const unsigned int, const unsigned int, 
+                 const gsl_complex);
 
 
     //
@@ -278,8 +285,8 @@ class QuantumGraphObject: public QuantumGraph
 
 
     //
-    int GetIndexForBond(QuantumGraphBond*);
-    int GetIndexForNode(QuantumGraphNode*);
+    int GetIndexForBond(const QuantumGraphBond*) const;
+    int GetIndexForNode(const QuantumGraphNode*) const;
 
 
 };
@@ -318,7 +325,8 @@ class QuantumGraphObject: public QuantumGraph
 ///   bond-to-bond scattering model for the quantum graph, it is the
 ///   node that determines how the graph is connected.
 ///
-///   Each node must keep track of the 
+///   Each node must keep track of the undirected bonds it is attached
+///   to 
 class QuantumGraphNode
 {
 
@@ -340,28 +348,30 @@ class QuantumGraphNode
     QuantumGraphNode();
 
     //
-    QuantumGraphNode(gsl_matrix_complex*);
+    QuantumGraphNode(const gsl_matrix_complex*);
 
     //
     ~QuantumGraphNode();
 
     //
-    std::vector<QuantumGraphBond*> GetIncomingBonds();
-
-    //
-    int GetIndexForBond(QuantumGraphBond*);
-
-    //
     void AttachToBond(QuantumGraphUndirectedBond*);
 
     //
-    gsl_complex node_scattering_matrix_element(int, int);
+    std::vector<QuantumGraphBond*> GetIncomingBonds() const;
+
+    //
+    int GetIndexForBond(const QuantumGraphBond*) const;
 
     //
     std::vector<QuantumGraphUndirectedBond*> 
-    attached_undirected_bonds();
+    attached_undirected_bonds() const;
 
-    //
+    // Accessor Method. Returns the element (i,j) of the scattering
+    // matrix at the node. The 
+    gsl_complex node_scattering_matrix_element(const int, 
+                                               const int) const;
+
+    // Accessor Method. Returns the number of undirected bonds attached.
     unsigned int valence() const;
 };
 
@@ -385,10 +395,11 @@ class QuantumGraphBond
     QuantumGraphNode* start_node_;
     QuantumGraphNode* end_node_;
   public:
-    QuantumGraphBond(QuantumGraphNode*, QuantumGraphNode*, gsl_complex);
-    QuantumGraphNode* start_node();
-    QuantumGraphNode* end_node();
-    gsl_complex complex_length();
+    QuantumGraphBond(QuantumGraphNode*, QuantumGraphNode*, 
+                     const gsl_complex);
+    QuantumGraphNode* start_node() const;
+    QuantumGraphNode* end_node() const;
+    gsl_complex complex_length() const;
 };
 
 
@@ -409,11 +420,11 @@ class QuantumGraphUndirectedBond
   private:
     QuantumGraphBond forward_bond_;
     QuantumGraphBond backward_bond_;
-    void CheckBondLengths();
+    void CheckBondLengths() const;
   public:
     QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*,
                                gsl_complex);
-    bool HasDirectedBond(QuantumGraphBond*);
+    bool HasDirectedBond(const QuantumGraphBond*) const;
     QuantumGraphBond* forward_bond();
     QuantumGraphBond* backward_bond();
 };

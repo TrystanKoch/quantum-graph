@@ -132,27 +132,27 @@ class QuantumGraph
     
 
     // Checks that a matrix has the dimensions of the number of bonds.
-    bool checkMatrixSize(std::vector<std::vector<double>>);
-
-
-    // Allocates memory for the GSL structs the class stores.
-    void allocGraphMemory(unsigned int);
+    bool CheckMatrixSize(const std::vector<std::vector<double>>) const;
 
 
     // Creates negative_imaginary_lengths_ and positive_imaginary_lengths_sum_
     // from the input data. Should be called in every constructor.
-    void makeInternals();
-
-
-    // Frees the memory for all of the data members. Invoked by the 
-    // destructor to prevent leaking allocated memory.
-    void freeGraphMemory();
+    void MakeInternals();
 
 
     // These two make the two secondary vectors that cut down on the 
     // number of operations. 
-    void makeNegImaginaryLengthVector();
-    void makePosImaginaryLengthVectorSum();
+    void MakeNegImaginaryLengthVector();
+    void MakePosImaginaryLengthVectorSum();
+
+
+    // Allocates memory for the GSL structs the class stores.
+    void AllocateGraphMemory(const unsigned int);
+
+
+    // Frees the memory for all of the data members. Invoked by the 
+    // destructor to prevent leaking allocated memory.
+    void FreeGraphMemory();
 
 
 
@@ -163,7 +163,7 @@ class QuantumGraph
     //
     // This method is intended to let a derived class set the 
     // mathematical portion of the model to match its implementation.
-    void setGraph(const gsl_vector_complex*, const gsl_matrix_complex*);
+    void Update(const gsl_vector_complex*, const gsl_matrix_complex*);
 
 
 
@@ -193,7 +193,7 @@ class QuantumGraph
     // the problem we're solving consistant across files, we need a way
     // to take the text from a data file's header and initialize our
     // Quantum Graph object based on that data.
-    QuantumGraph(std::vector<std::string>);
+    QuantumGraph(const std::vector<std::string>);
 
 
     // Standard copy constructor.
@@ -246,9 +246,10 @@ class QuantumGraph
     //
     // Input:  gsl_complex -> A complex wavenumber (an eigenvalue).
     // Input:  gsl_vector_complex* -> A potential eigenvector.
-    // Output: gsl_vector_complex* -> A vector that should be close to
-    //                        zero if an eigenvalue and eigenvector pair
-    //                        are the inputs.
+    // Output: double -> The complex vector 2-norm of the characteristic 
+    //                   matrix times the vector you are testing. For a
+    //                   true eigenvalue, eigenvector pair, this will be
+    //                   very close to zero.
     //
     // This is less for computing things of interest, and more of a
     // check that all the above steps worked out when finding the

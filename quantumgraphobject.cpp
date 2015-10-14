@@ -60,7 +60,7 @@ QuantumGraphObject::QuantumGraphObject()
 // Dynamically add a new node. Not necessarily connected to anything.
 // The scattering matrix supplied could be anything, as there is no
 // check on what gets input.
-void QuantumGraphObject::AddNode(gsl_matrix_complex* S)
+void QuantumGraphObject::AddNode(const gsl_matrix_complex* S)
 {
   nodes_.push_back(new QuantumGraphNode(S));
 }
@@ -68,8 +68,9 @@ void QuantumGraphObject::AddNode(gsl_matrix_complex* S)
 
 // Connect node a with node b, using an undirected bond of complex 
 // length L. Can only add bonds this way, so bonds are always connected.
-void QuantumGraphObject::Connect(unsigned int a, unsigned int b, 
-                                 gsl_complex L)
+void QuantumGraphObject::Connect(const unsigned int a, 
+                                 const unsigned int b, 
+                                 const gsl_complex L)
 {
   undirected_bonds_.push_back(
                new QuantumGraphUndirectedBond(nodes_[a], nodes_[b], L));
@@ -106,7 +107,7 @@ QuantumGraphObject::~QuantumGraphObject()
 // Note that in this convention, the index "i" of the forward bond in
 // the undirected bond "b" is i=2*b, while the backward bond is given
 // index i=2*b + 1. 
-int QuantumGraphObject::GetIndexForBond(QuantumGraphBond* QGBP)
+int QuantumGraphObject::GetIndexForBond(const QuantumGraphBond* QGBP) const
 {
   // Take every undirected bond in our list.
   for (unsigned int ub=0; ub<undirected_bonds_.size(); ub++)
@@ -132,7 +133,7 @@ int QuantumGraphObject::GetIndexForBond(QuantumGraphBond* QGBP)
 // somewhere else we need to know what the index of that bond is.
 //
 // less important than the bond version, but still useful.
-int QuantumGraphObject::GetIndexForNode(QuantumGraphNode* QGNP)
+int QuantumGraphObject::GetIndexForNode(const QuantumGraphNode* QGNP) const
 {
   for (unsigned int n=0; n<nodes_.size(); n++)
   {
@@ -272,7 +273,7 @@ void QuantumGraphObject::UpdateQuantumGraph()
 
   // Protected function of the QuantumGraph class. But we're in a 
   // derived class so we can use it.
-  setGraph(newLVector, newSMatrix);
+  Update(newLVector, newSMatrix);
 
   // Clean the workspace of our temporary matrix and vector.
   gsl_matrix_complex_free(newSMatrix);
@@ -299,7 +300,7 @@ void QuantumGraphObject::UpdateQuantumGraph()
 // to the user to make sure this is set in a way that makes sense to the
 // physical problem.
 QuantumGraphNode::QuantumGraphNode(
-    gsl_matrix_complex* node_scattering_matrix
+    const gsl_matrix_complex* node_scattering_matrix
 )
 {
   valence_ = node_scattering_matrix->size1;
@@ -335,7 +336,7 @@ void QuantumGraphNode::AttachToBond(QuantumGraphUndirectedBond* QGUB)
 // We don't keep track of the bonds that are attached to a node, only
 // the undirected bonds. So we have to ask each undirected bond which
 // of its bonds stores a pointer to this node as it's end_node_ member.
-std::vector<QuantumGraphBond*> QuantumGraphNode::GetIncomingBonds()
+std::vector<QuantumGraphBond*> QuantumGraphNode::GetIncomingBonds() const
 {
   std::vector<QuantumGraphBond*> IncomingBonds;
 
@@ -368,7 +369,7 @@ std::vector<QuantumGraphBond*> QuantumGraphNode::GetIncomingBonds()
 
 // Pretty straight forward. Iterate over all the attached undirected 
 // bonds and see if the bond is in one of them.
-int QuantumGraphNode::GetIndexForBond(QuantumGraphBond* QGBP)
+int QuantumGraphNode::GetIndexForBond(const QuantumGraphBond* QGBP) const
 {
   for (unsigned int m=0; m<attached_undirected_bonds_.size(); m++)
   {
@@ -387,7 +388,7 @@ int QuantumGraphNode::GetIndexForBond(QuantumGraphBond* QGBP)
 
 // Accessor Method... sort of... since I don't want to pass a pointer to
 // data, which would remove encapsulation.
-gsl_complex QuantumGraphNode::node_scattering_matrix_element(int l, int m)
+gsl_complex QuantumGraphNode::node_scattering_matrix_element(const int l, const int m) const
 {
   return gsl_matrix_complex_get(node_scattering_matrix_, l, m);
 }
@@ -395,7 +396,7 @@ gsl_complex QuantumGraphNode::node_scattering_matrix_element(int l, int m)
 
 // Accessor Method
 std::vector<QuantumGraphUndirectedBond*>
-QuantumGraphNode::attached_undirected_bonds()
+QuantumGraphNode::attached_undirected_bonds() const
 {
   return attached_undirected_bonds_;
 }
@@ -416,7 +417,7 @@ QuantumGraphNode::attached_undirected_bonds()
 // children of the QuantumGraphObject.
 QuantumGraphBond::QuantumGraphBond(QuantumGraphNode* start_node, 
                                    QuantumGraphNode* end_node, 
-                                   gsl_complex complex_length)
+                                   const gsl_complex complex_length)
 {
   start_node_ = start_node;
   end_node_ = end_node;
@@ -424,19 +425,19 @@ QuantumGraphBond::QuantumGraphBond(QuantumGraphNode* start_node,
 }
 
 // Accessor Method
-QuantumGraphNode* QuantumGraphBond::start_node()
+QuantumGraphNode* QuantumGraphBond::start_node() const
 {
   return start_node_;
 }
 
 // Accessor Method
-QuantumGraphNode* QuantumGraphBond::end_node()
+QuantumGraphNode* QuantumGraphBond::end_node() const
 {
   return end_node_;
 }
 
 // Accessor Method
-gsl_complex QuantumGraphBond::complex_length()
+gsl_complex QuantumGraphBond::complex_length() const
 {
   return complex_length_;
 }
@@ -466,7 +467,7 @@ QuantumGraphUndirectedBond::QuantumGraphUndirectedBond(
 
 
 // 
-bool QuantumGraphUndirectedBond::HasDirectedBond(QuantumGraphBond* QGB)
+bool QuantumGraphUndirectedBond::HasDirectedBond(const QuantumGraphBond* QGB) const
 {
   if ((QGB == &forward_bond_) or (QGB == &backward_bond_))
   {
