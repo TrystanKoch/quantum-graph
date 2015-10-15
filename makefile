@@ -93,10 +93,13 @@ LDFLAGS=-lgsl -lgslcblas -llapacke
 
 ########################################################################
 ### Code compilation
-CODETARGETS=bound_qg_roots find_bounded_qg_roots 
+CODETARGETS=bound_qg_roots find_bounded_qg_roots optimize_histogram \
+		take_differences
+
+LIBRARYTARGETS=quantumgraph.o quantumgraphobject.o
 
 # "make" will create the program files only
-code: $(CODETARGETS) quantumgraphobject.o
+code: $(CODETARGETS) $(LIBRARYTARGETS)
 
 
 ########################################################################
@@ -137,7 +140,15 @@ find_bounded_qg_roots: find_bounded_qg_roots.o quantumgraph.o \
 		$(LDFLAGS)
 	@echo "  Compiled $@"
 
+optimize_histogram: optimize_histogram.o
+	@$(CC) $(CFLAGS) optimize_histogram.o -o optimize_histogram \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
 
+take_differences: take_differences.o
+	@$(CC) $(CFLAGS) take_differences.o -o take_differences \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
 
 
 ### Make Object Files
@@ -150,7 +161,13 @@ find_bounded_qg_roots.o: find_bounded_qg_roots.cpp
 	@$(CC) $(CFLAGS) -c find_bounded_qg_roots.cpp
 	@echo "  Compiled $@"
 
+optimize_histogram.o: optimize_histogram.cpp
+	@$(CC) $(CFLAGS) -c optimize_histogram.cpp
+	@echo "  Compiled $@"
 
+take_differences.o: take_differences.cpp
+	@$(CC) $(CFLAGS) -c take_differences.cpp
+	@echo "  Compiled $@"
 
 
 ### Create Class and Function Libraries
