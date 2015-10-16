@@ -28,6 +28,7 @@
 
 ////////////////////////////////////////////////////////////////////////
 /// Prototypes
+
 bool ParseInputForNormalization(int, char*[]);
 void ReadInDataFile(std::vector<std::string>&, std::vector<double>&);
 void PrintPreviousHeader(std::vector<std::string>);
@@ -37,8 +38,10 @@ void PrintDifferences(std::vector<double>);
 
 
 
+
 ////////////////////////////////////////////////////////////////////////
 /// Main Function
+
 int main(int argc, char *argv[])
 {
   bool normalization_flag = ParseInputForNormalization(argc, argv);
@@ -93,7 +96,11 @@ int main(int argc, char *argv[])
 ////////////////////////////////////////////////////////////////////////
 /// Helper Functions
 
-
+// There may or may not be a commandline argument for this function. If
+// there is an argument that indicates that we want a list of normalized
+// differences, we normalize the differences so that the average 
+// difference is one. Otherwise, we just return a raw list of 
+// differences.
 bool ParseInputForNormalization(int argc, char* argv[])
 {
   if (argc > 1)
@@ -113,6 +120,13 @@ bool ParseInputForNormalization(int argc, char* argv[])
 }
 
 
+
+
+
+// Reads the data in the file into a header, containing the input file's
+// comments and headmatter, and a vecator of doubles, which we use later
+// to calculate the differences. Note that this function takes two
+// output variables.
 void ReadInDataFile(std::vector<std::string>& header,
                     std::vector<double>& data)
 {
@@ -132,6 +146,10 @@ void ReadInDataFile(std::vector<std::string>& header,
   }
 }
 
+
+
+
+
 // Simple Macro function that just makes the main code easier to read.
 void PrintPreviousHeader(std::vector<std::string> header)
 {
@@ -140,6 +158,9 @@ void PrintPreviousHeader(std::vector<std::string> header)
     std::cout << header[i] << std::endl;
   }
 }
+
+
+
 
 
 // Passes information about the differences we took to the output
@@ -163,6 +184,9 @@ void OutputDifferenceInformation(double difference_average,
   std::cout << "#  "                                 << std::endl;
   std::cout << "# END"                               << std::endl;
 }
+
+
+
 
 
 // Simple Macro function that just makes the main code easier to read.

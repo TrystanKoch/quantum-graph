@@ -56,7 +56,8 @@ LDFLAGS=-lgsl -lgslcblas -llapacke
 ########################################################################
 ### Code compilation
 CODETARGETS=create_neumann_complete_five_graph \
-		create_neumann_3bond_star
+		create_neumann_3bond_star \
+		create_neumann_tetrahedron_input_loss
 
 QGOBJECT=../quantumgraphobject.o
 
@@ -70,12 +71,18 @@ code: $(CODETARGETS)
 ### Create Programs
 
 create_neumann_tetrahedron_input: create_neumann_tetrahedron_input.o \
-				../quantumgraph.o
+				../quantumgraph.o $(QGOBJECT)
 	@$(CC) $(CFLAGS) create_neumann_tetrahedron_input.o \
 		../quantumgraph.o -o create_neumann_tetrahedron_input \
 		$(LDFLAGS)
 	@echo "  Compiled $@"
 
+create_neumann_tetrahedron_input_loss: create_neumann_tetrahedron_input_loss.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) create_neumann_tetrahedron_input_loss.o \
+		../quantumgraph.o $(QGOBJECT) -o create_neumann_tetrahedron_input_loss \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
 
 create_neumann_complete_five_graph: create_neumann_complete_five_graph.o \
 				../quantumgraph.o $(QGOBJECT)
@@ -96,6 +103,10 @@ create_neumann_3bond_star: create_neumann_3bond_star.o \
 
 create_neumann_tetrahedron_input.o: create_neumann_tetrahedron_input.cpp
 	@$(CC) $(CFLAGS) -c create_neumann_tetrahedron_input.cpp
+	@echo "  Compiled $@"
+
+create_neumann_tetrahedron_input_loss.o: create_neumann_tetrahedron_input_loss.cpp
+	@$(CC) $(CFLAGS) -c create_neumann_tetrahedron_input_loss.cpp
 	@echo "  Compiled $@"
 
 create_neumann_complete_five_graph.o: create_neumann_complete_five_graph.cpp

@@ -44,15 +44,15 @@
 
 
 const double X_MIN = +0.1;
-const double X_MAX = +10000;
-const double Y_MIN = -0.01;
+const double X_MAX = +100;
+const double Y_MIN = -20;
 const double Y_MAX = +0.02; 
 
 
 // Number of discrete points along a side
 // 2**10 + 1 -> 10 halvings possible
-const unsigned int NUM_HALVINGS_X = 22;
-const unsigned int NUM_HALVINGS_Y = 8;
+const unsigned int NUM_HALVINGS_X = 18;
+const unsigned int NUM_HALVINGS_Y = 18;
 
 
 int main()
