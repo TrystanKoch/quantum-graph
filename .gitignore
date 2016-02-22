@@ -1,5 +1,6 @@
 # Temporary files
 *~
+*.swp
 
 
 # Folders for temporary things and data

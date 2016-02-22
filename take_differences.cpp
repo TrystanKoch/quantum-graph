@@ -20,6 +20,7 @@
 
 #include <limits>
 #include <numeric>
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <cstring>
@@ -50,6 +51,8 @@ int main(int argc, char *argv[])
   std::vector<double> data;
 
   ReadInDataFile(header, data);
+
+  std::sort(data.begin(), data.end());
 
   std::vector<double> differences(data.size());
 
