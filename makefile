@@ -66,9 +66,16 @@
 ########################################################################
 ### Directory variables
 
+# Source file directory
 SRCDIR=$(CURDIR)/src
+
+# Header directory
 INCDIR=$(CURDIR)/include
-BUILDDIR=$(CURDIR)/build
+
+# Output object files to here
+BUILDDIR=$(CURDIR)/obj
+
+# Executable file destination
 OUTDIR=$(CURDIR)/bin
 
 
