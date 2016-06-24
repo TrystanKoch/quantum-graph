@@ -63,6 +63,14 @@
 ##  my advisor at UMD.
 
 
+########################################################################
+### Directory variables
+
+SRCDIR=$(CURDIR)/src
+INCDIR=$(CURDIR)/include
+BUILDDIR=$(CURDIR)/build
+OUTDIR=$(CURDIR)/bin
+
 
 ########################################################################
 ### Compiler Flag definitions

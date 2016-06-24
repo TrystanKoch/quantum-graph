@@ -80,6 +80,24 @@ void QuantumGraphObject::Connect(const unsigned int a,
 
 
 
+// Connect node a with node b, using an undirected bond of complex 
+// length L. Can only add bonds this way, so bonds are always connected.
+void QuantumGraphObject::Connect(const unsigned int a, 
+                                 const unsigned int b, 
+                                 const gsl_complex L_pos,
+                                 const gsl_complex L_neg)
+{
+  undirected_bonds_.push_back(
+               new QuantumGraphUndirectedBond(nodes_[a], nodes_[b],
+                                              L_pos, L_neg));
+  nodes_[a]->AttachToBond(undirected_bonds_.back());
+  nodes_[b]->AttachToBond(undirected_bonds_.back());
+}
+
+
+
+
+
 // Loops through both member vectors and ensures that the memory 
 // allocated to the stored pointer is deleted. Important because we're
 // dynamically adding nodes and bonds.
@@ -452,6 +470,15 @@ gsl_complex QuantumGraphBond::complex_length() const
 ///
 /// 
 
+QuantumGraphUndirectedBond::QuantumGraphUndirectedBond(
+    QuantumGraphNode* node_one,
+    QuantumGraphNode* node_two, 
+    gsl_complex complex_length_pos,
+    gsl_complex complex_length_neg
+) :forward_bond_(node_one, node_two, complex_length_pos), 
+   backward_bond_(node_two, node_one, complex_length_neg)
+{
+}
 
 // Note that the undirected bond is the parent of two bonds. Other
 // classes have to call this object's methods to get information about

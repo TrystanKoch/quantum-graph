@@ -58,8 +58,14 @@ LDFLAGS=-lgsl -lgslcblas -llapacke
 CODETARGETS=create_neumann_complete_five_graph \
 		create_neumann_3bond_star \
 		create_neumann_tetrahedron_input_loss \
-		create_neumann_tetrahedron_input_loss_two_port
-
+		create_neumann_tetrahedron_input_loss_two_port \
+		create_neumann_tetrahedron_nonreciprocal_lines \
+		quotient_graph_attempt_1 \
+		quotient_graph_2 \
+		quotient_graph_3 \
+		quotient_graph_5 \
+		quotient_graph_6
+ 
 QGOBJECT=../quantumgraphobject.o
 
 # "make" will create the program files only
@@ -106,6 +112,48 @@ create_neumann_3bond_star: create_neumann_3bond_star.o \
 		$(LDFLAGS)
 	@echo "  Compiled $@"
 
+create_neumann_tetrahedron_nonreciprocal_lines: create_neumann_tetrahedron_nonreciprocal_lines.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) create_neumann_tetrahedron_nonreciprocal_lines.o \
+		../quantumgraph.o -o create_neumann_tetrahedron_nonreciprocal_lines \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
+
+quotient_graph_attempt_1: quotient_graph_attempt_1.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) quotient_graph_attempt_1.o \
+		../quantumgraph.o $(QGOBJECT) -o quotient_graph_attempt_1 \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
+	
+quotient_graph_2: quotient_graph_2.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) quotient_graph_2.o \
+		../quantumgraph.o $(QGOBJECT) -o quotient_graph_2 \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
+	
+	
+quotient_graph_3: quotient_graph_3.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) quotient_graph_3.o \
+		../quantumgraph.o $(QGOBJECT) -o quotient_graph_3 \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
+
+quotient_graph_5: quotient_graph_5.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) quotient_graph_5.o \
+		../quantumgraph.o $(QGOBJECT) -o quotient_graph_5 \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
+
+quotient_graph_6: quotient_graph_6.o \
+				../quantumgraph.o $(QGOBJECT)
+	@$(CC) $(CFLAGS) quotient_graph_6.o \
+		../quantumgraph.o $(QGOBJECT) -o quotient_graph_6 \
+		$(LDFLAGS)
+	@echo "  Compiled $@"
 
 ### Make Object Files
 
@@ -127,6 +175,30 @@ create_neumann_complete_five_graph.o: create_neumann_complete_five_graph.cpp
 
 create_neumann_3bond_star.o: create_neumann_3bond_star.cpp
 	@$(CC) $(CFLAGS) -c create_neumann_3bond_star.cpp
+	@echo "  Compiled $@"
+	
+create_neumann_tetrahedron_nonreciprocal_lines.o: create_neumann_tetrahedron_nonreciprocal_lines.cpp
+	@$(CC) $(CFLAGS) -c create_neumann_tetrahedron_nonreciprocal_lines.cpp
+	@echo "  Compiled $@"
+	
+quotient_graph_attempt_1.o: quotient_graph_attempt_1.cpp
+	@$(CC) $(CFLAGS) -c quotient_graph_attempt_1.cpp
+	@echo "  Compiled $@"
+	
+quotient_graph_2.o: quotient_graph_2.cpp
+	@$(CC) $(CFLAGS) -c quotient_graph_2.cpp
+	@echo "  Compiled $@"
+	
+quotient_graph_3.o: quotient_graph_3.cpp
+	@$(CC) $(CFLAGS) -c quotient_graph_3.cpp
+	@echo "  Compiled $@"
+	
+quotient_graph_5.o: quotient_graph_5.cpp
+	@$(CC) $(CFLAGS) -c quotient_graph_5.cpp
+	@echo "  Compiled $@"
+	
+quotient_graph_6.o: quotient_graph_6.cpp
+	@$(CC) $(CFLAGS) -c quotient_graph_6.cpp
 	@echo "  Compiled $@"
 
 

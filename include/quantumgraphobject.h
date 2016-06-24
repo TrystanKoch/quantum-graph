@@ -278,6 +278,10 @@ class QuantumGraphObject: public QuantumGraph
     // 
     void Connect(const unsigned int, const unsigned int, 
                  const gsl_complex);
+                 
+                 
+    void Connect(const unsigned int, const unsigned int, 
+                 const gsl_complex, const gsl_complex);
 
 
     //
@@ -424,6 +428,8 @@ class QuantumGraphUndirectedBond
   public:
     QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*,
                                gsl_complex);
+    QuantumGraphUndirectedBond(QuantumGraphNode*, QuantumGraphNode*,
+                               gsl_complex, gsl_complex);
     bool HasDirectedBond(const QuantumGraphBond*) const;
     QuantumGraphBond* forward_bond();
     QuantumGraphBond* backward_bond();

@@ -51,19 +51,25 @@ int main(int argc, char *argv[])
   std::vector<double> data;
 
   ReadInDataFile(header, data);
-
+ 
   std::sort(data.begin(), data.end());
-
+  
   std::vector<double> differences(data.size());
+  
+  data.erase(std::remove(data.begin(),data.end(),0.0),data.end());
 
   // Take the differences between roots using an iterator method.
   std::adjacent_difference(data.begin(), data.end(), 
                            differences.begin());
+      
+  differences.erase(differences.begin());
+  
 
   double difference_average 
-      = std::accumulate(differences.begin(), differences.end(), 0);
-  difference_average /= differences.size();
+      = std::accumulate(differences.begin(), differences.end(), 0.0);
 
+  difference_average = difference_average / differences.size();
+  
   if (normalization_flag)
   {
     for (unsigned int i=0; i<differences.size(); i++)
@@ -111,8 +117,8 @@ bool ParseInputForNormalization(int argc, char* argv[])
     for (int i=1; i<argc ; i++)
     {
       if ( !std::strcmp(argv[i],"-n") 
-           or !std::strcmp(argv[1],"--normalized")
-           or !std::strcmp(argv[1],"--normed") )
+           or !std::strcmp(argv[i],"--normalized")
+           or !std::strcmp(argv[i],"--normed") )
       {
         return true;
       }
