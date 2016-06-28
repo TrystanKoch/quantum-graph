@@ -4,7 +4,7 @@
 #    - Documents workflow for quantum graph modeling and data creation.
 #    - Documents workflow for plot creation from data.
 #
-#  Copyright (C) 2015 Trystan Koch
+#  Copyright (C) 2015-2016 Trystan Koch
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@
 SRCDIR=$(CURDIR)/src
 
 # Header directory
-INCDIR=$(CURDIR)/include
+INCDIR=$(CURDIR)/headers
 
 # Output object files to here
 BUILDDIR=$(CURDIR)/obj
@@ -85,17 +85,21 @@ OUTDIR=$(CURDIR)/bin
 # Uses the gcc C++ compiler.
 CC=g++
 
+
+# Uses the gcc C++ linker.
+LD=g++
+
+
 # -DLAPACK_COMPLEX_CUSTOM
 #     Lapack complex type is redefined to the gsl_complex type in code.
 # -std=c++11 
 #     Use the features of C++11.
-# -I/usr/include/gsl
-#     Include the GNU Scientific Library.
 # -Wall
 #     Show all warnings in the compilation. Always fix these.
 # -O3
 #     Optimize code using all possible means of optimization. 
-CFLAGS=-DLAPACK_COMPLEX_CUSTOM -std=c++11 -I/usr/include/gsl -Wall -O3
+CFLAGS=-DLAPACK_COMPLEX_CUSTOM -std=c++11  -Wall -O3
+
 
 # -lgsl
 #     Link the GNU Scientific Library.
@@ -103,102 +107,71 @@ CFLAGS=-DLAPACK_COMPLEX_CUSTOM -std=c++11 -I/usr/include/gsl -Wall -O3
 #     Link the GSL libraries for BLAS computation.
 # -llapacke
 #     Link the C version of LAPACK linear algebra package.
-LDFLAGS=-lgsl -lgslcblas -llapacke
+LDFLAGS=-lgsl -lgslcblas -llapacke -L$(INCDIR)
+
+
+# -I/usr/include/gsl
+#     Include the GNU Scientific Library.
+# -I$(INCDIR)
+#     Include the file headers.
+INCFLAGS=-I/usr/include/gsl -I$(INCDIR)
 
 
 ########################################################################
 ### Code compilation
-CODETARGETS=bound_qg_roots find_bounded_qg_roots optimize_histogram \
-		take_differences
+TARGETS=bound_qg_roots \
+	find_bounded_qg_roots \
+	optimize_histogram \
+	take_differences
 
-LIBRARYTARGETS=quantumgraph.o quantumgraphobject.o
+LIBRARIES=quantumgraph \
+		quantumgraphobject \
+		quantumgraphrootfinding
+
+vpath %     $(OUTDIR)
+vpath %.h   $(INCDIR)
+vpath %.cpp $(SRCDIR)
+vpath %.o   $(BUILDDIR)
+
+
+CODEOBJECTS=$(TARGETS:%=%.o)
+LIBRARYOBJECTS=$(LIBRARIES:%=%.o)
+		
+CODESOURCES=$(TARGETS:%=%.cpp)
+LIBRARYSOURCES=$(LIBRARIES:%=%.cpp)
+
+
 
 # "make" will create the program files only
-code: $(CODETARGETS) $(LIBRARYTARGETS)
-
-
-########################################################################
-### Workflow
-RESULTTARGETS=roots.dat
-
-#
-results: $(RESULTTARGETS)
-
-
-### Use these directives to calculate the roots of the quantum graph
-### which is defined in bound_qg_roots.cpp (to change)
-
-roots.dat: find_bounded_qg_roots root_bounds.dat
-	time ./find_bounded_qg_roots >roots.dat
-
-root_bounds.dat: bound_qg_roots
-	time ./bound_qg_roots >root_bounds.dat
-
+code: $(TARGETS) $(LIBRARYOBJECTS)
 
 
 
 ########################################################################
 ### Source File Compilation
 
+.SECONDEXPANSION:
+
 ### Create Programs
 
-bound_qg_roots: bound_qg_roots.o quantumgraph.o \
-			quantumgraphrootfinding.o
-	@$(CC) $(CFLAGS) bound_qg_roots.o quantumgraph.o \
-		quantumgraphrootfinding.o -o bound_qg_roots $(LDFLAGS)
-	@echo "  Compiled $@"
-
-find_bounded_qg_roots: find_bounded_qg_roots.o quantumgraph.o \
-			quantumgraphrootfinding.o
-	@$(CC) $(CFLAGS) find_bounded_qg_roots.o quantumgraph.o \
-		quantumgraphrootfinding.o -o find_bounded_qg_roots \
-		$(LDFLAGS)
-	@echo "  Compiled $@"
-
-optimize_histogram: optimize_histogram.o
-	@$(CC) $(CFLAGS) optimize_histogram.o -o optimize_histogram \
-		$(LDFLAGS)
-	@echo "  Compiled $@"
-
-take_differences: take_differences.o
-	@$(CC) $(CFLAGS) take_differences.o -o take_differences \
-		$(LDFLAGS)
+$(TARGETS): $$(patsubst %, %.o, $$@) $(LIBRARYOBJECTS)
+	@$(CC) $(CFLAGS) $(INCFLAGS) $(BUILDDIR)/$@.o $(addprefix $(BUILDDIR)/,$(LIBRARYOBJECTS)) -o $(OUTDIR)/$@ $(LDFLAGS) $(INCFLAGS)
 	@echo "  Compiled $@"
 
 
 ### Make Object Files
 
-bound_qg_roots.o: bound_qg_roots.cpp
-	@$(CC) $(CFLAGS) -c bound_qg_roots.cpp
-	@echo "  Compiled $@"
-
-find_bounded_qg_roots.o: find_bounded_qg_roots.cpp
-	@$(CC) $(CFLAGS) -c find_bounded_qg_roots.cpp
-	@echo "  Compiled $@"
-
-optimize_histogram.o: optimize_histogram.cpp
-	@$(CC) $(CFLAGS) -c optimize_histogram.cpp
-	@echo "  Compiled $@"
-
-take_differences.o: take_differences.cpp
-	@$(CC) $(CFLAGS) -c take_differences.cpp
+$(CODEOBJECTS): $$(patsubst %.o,%.cpp,$$@)
+	@$(CC) $(CFLAGS) $(INCFLAGS) -c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) -o $(BUILDDIR)/$@ $(INCFLAGS)
 	@echo "  Compiled $@"
 
 
 ### Create Class and Function Libraries
 
-quantumgraph.o: quantumgraph.cpp quantumgraph.h
-	@$(CC) $(CFLAGS) -c quantumgraph.cpp
+$(LIBRARYOBJECTS): $$(patsubst %.o,%.cpp,$$@) $$(patsubst %.o,%.h,$$@)
+	@$(CC) $(CFLAGS) $(INCFLAGS) -c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) -o $(BUILDDIR)/$@ 
 	@echo "  Compiled $@"
 
-quantumgraphobject.o: quantumgraphobject.cpp quantumgraphobject.h
-	@$(CC) $(CFLAGS) -c quantumgraphobject.cpp
-	@echo "  Compiled $@"
-
-quantumgraphrootfinding.o: quantumgraphrootfinding.cpp \
-			quantumgraphrootfinding.h
-	@$(CC) $(CFLAGS) -c quantumgraphrootfinding.cpp
-	@echo "  Compiled $@"
 
 
 ########################################################################
@@ -214,7 +187,7 @@ tidy:
 
 # "make clean" removes the object files and any temp files.
 clean: tidy
-	@rm -f *.o
+	@rm -f $(BUILDDIR)/*.o
 	@echo "  Removed object files"
 
 
@@ -235,6 +208,7 @@ data/%:
 # It runs both clean (by extension tidy) and cleandata, so all that is
 # left in the folder are the source files.
 veryclean: clean cleandata
-	@rm -f $(CODETARGETS)
+	@rm -f $(OUTDIR)/*
 	@echo "  Removed program files"
+
 
