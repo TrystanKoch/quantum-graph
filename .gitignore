@@ -8,6 +8,10 @@ data/
 data/*
 alternate/*
 tests/*
+bin/
+bin/*
+obj/
+obj/*
 
 # Plotting files, for now
 *.plt

@@ -107,6 +107,8 @@ CFLAGS=-DLAPACK_COMPLEX_CUSTOM -std=c++11  -Wall -O3
 #     Link the GSL libraries for BLAS computation.
 # -llapacke
 #     Link the C version of LAPACK linear algebra package.
+# -L$(INCDIR)
+#     Link the headers from the headers folder
 LDFLAGS=-lgsl -lgslcblas -llapacke -L$(INCDIR)
 
 
@@ -121,8 +123,9 @@ INCFLAGS=-I/usr/include/gsl -I$(INCDIR)
 ### Code compilation
 TARGETS=bound_qg_roots \
 	find_bounded_qg_roots \
-	optimize_histogram \
-	take_differences
+	take_differences \
+	optimize_histogram
+
 
 LIBRARIES=quantumgraph \
 		quantumgraphobject \
@@ -136,9 +139,6 @@ vpath %.o   $(BUILDDIR)
 
 CODEOBJECTS=$(TARGETS:%=%.o)
 LIBRARYOBJECTS=$(LIBRARIES:%=%.o)
-		
-CODESOURCES=$(TARGETS:%=%.cpp)
-LIBRARYSOURCES=$(LIBRARIES:%=%.cpp)
 
 
 
