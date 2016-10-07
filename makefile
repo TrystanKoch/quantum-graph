@@ -21,6 +21,7 @@
 #
 
 
+
 ########################################################################
 ## quantum-graph
 ##
@@ -63,6 +64,7 @@
 ##  my advisor at UMD.
 
 
+
 ########################################################################
 ### Directory variables
 
@@ -77,6 +79,7 @@ BUILDDIR=$(CURDIR)/obj
 
 # Executable file destination
 OUTDIR=$(CURDIR)/bin
+
 
 
 ########################################################################
@@ -119,8 +122,11 @@ LDFLAGS=-lgsl -lgslcblas -llapacke -L$(INCDIR)
 INCFLAGS=-I/usr/include/gsl -I$(INCDIR)
 
 
+
+
 ########################################################################
-### Code compilation
+### Definitions, targets, and paths
+
 TARGETS=bound_qg_roots \
 	find_bounded_qg_roots \
 	take_differences \
@@ -130,6 +136,10 @@ TARGETS=bound_qg_roots \
 LIBRARIES=quantumgraph \
 		quantumgraphobject \
 		quantumgraphrootfinding
+
+
+DIRECTORIES=$(OUTDIR) $(BUILDDIR) data
+
 
 vpath %     $(OUTDIR)
 vpath %.h   $(INCDIR)
@@ -142,7 +152,11 @@ LIBRARYOBJECTS=$(LIBRARIES:%=%.o)
 
 
 
-# "make" will create the program files only
+########################################################################
+### Main recipe
+
+# "make" creates all unpackaged directories and all executables  
+code: | $(DIRECTORIES)
 code: $(TARGETS) $(LIBRARYOBJECTS)
 
 
@@ -152,25 +166,44 @@ code: $(TARGETS) $(LIBRARYOBJECTS)
 
 .SECONDEXPANSION:
 
-### Create Programs
-
-$(TARGETS): $$(patsubst %, %.o, $$@) $(LIBRARYOBJECTS)
-	@$(CC) $(CFLAGS) $(INCFLAGS) $(BUILDDIR)/$@.o $(addprefix $(BUILDDIR)/,$(LIBRARYOBJECTS)) -o $(OUTDIR)/$@ $(LDFLAGS) $(INCFLAGS)
+# Create Programs
+$(TARGETS): $$(patsubst %,%.o,$$@) $(LIBRARYOBJECTS)
+	@$(CC) $(CFLAGS) $(INCFLAGS) $(BUILDDIR)/$@.o \
+		$(addprefix $(BUILDDIR)/,$(LIBRARYOBJECTS)) \
+		-o $(OUTDIR)/$@ $(LDFLAGS) $(INCFLAGS)
 	@echo "  Compiled $@"
 
 
-### Make Object Files
-
+# Make Object Files
 $(CODEOBJECTS): $$(patsubst %.o,%.cpp,$$@)
-	@$(CC) $(CFLAGS) $(INCFLAGS) -c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) -o $(BUILDDIR)/$@ $(INCFLAGS)
+	@$(CC) $(CFLAGS) $(INCFLAGS) \
+		-c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) \
+		-o $(BUILDDIR)/$@ $(INCFLAGS)
 	@echo "  Compiled $@"
 
 
-### Create Class and Function Libraries
-
+# Create Class and Function Libraries
 $(LIBRARYOBJECTS): $$(patsubst %.o,%.cpp,$$@) $$(patsubst %.o,%.h,$$@)
-	@$(CC) $(CFLAGS) $(INCFLAGS) -c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) -o $(BUILDDIR)/$@ 
+	@$(CC) $(CFLAGS) $(INCFLAGS) \
+		-c $(SRCDIR)/$(patsubst %.o,%.cpp,$@) \
+		-o $(BUILDDIR)/$@ 
 	@echo "  Compiled $@"
+
+
+
+########################################################################
+### Directories
+
+# For the directories that must be made by make.
+$(DIRECTORIES):
+	@mkdir -p $@
+	@echo "  Made directory: $@/"
+	
+
+# Creates an archive file.
+data/%:
+	@mkdir -p $@
+	@echo "  Made directory: $@/"
 
 
 
@@ -179,36 +212,33 @@ $(LIBRARYOBJECTS): $$(patsubst %.o,%.cpp,$$@) $$(patsubst %.o,%.h,$$@)
 
 .PHONY: tidy clean cleandata veryclean
 
+
 # "make tidy" removes only the temporary files created by editing
 tidy: 
-	@rm -f *~
+	@rm -rf *~ */*~ */*/*~ */*/*/*~
 	@echo "  Removed temporary files"
 
 
 # "make clean" removes the object files and any temp files.
 clean: tidy
-	@rm -f $(BUILDDIR)/*.o
+	@rm -rf $(BUILDDIR)
 	@echo "  Removed object files"
 
 
 # "make cleandata" removes data files to an archive directory.
+# Names of files are determined by the date of cleaning.
 # Files with the same name are backed up and not overwritten. 
 # The archive files are 
 cleandata: | data/$(shell date -I)
 	@if mv --backup=t *.dat data/$(shell date -I) 2>/dev/null; \
 		then echo "  Archived data to: data/`date -I`/"; fi
 
-# Creates an archive file with the present date as the name
-data/%:
-	@mkdir -p $@
-	@echo "  Made directory: $@/"
-
 
 # "make veryclean" also removes the compiled target binaries.
 # It runs both clean (by extension tidy) and cleandata, so all that is
 # left in the folder are the source files.
 veryclean: clean cleandata
-	@rm -f $(OUTDIR)/*
+	@rm -rf $(OUTDIR)
 	@echo "  Removed program files"
 
 
