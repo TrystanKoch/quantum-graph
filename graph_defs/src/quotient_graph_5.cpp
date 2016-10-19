@@ -1,6 +1,6 @@
 
 
-#include "../quantumgraphobject.h"
+#include "quantumgraphobject.h"
 
 #include <iostream>
 
@@ -18,6 +18,7 @@ int main()
                      + std::sqrt(5) + std::sqrt(6)
                      + std::sqrt(7) + std::sqrt(10) + std::sqrt(11) 
                      + 2*std::sqrt(13) + 2*std::sqrt(14)
+                     + (1/std::sqrt(15))
                   )/M_PI;
   
   gsl_complex length1 = gsl_complex_rect(std::sqrt(1)/Ltot, 0);
@@ -39,6 +40,8 @@ int main()
   gsl_complex length9 = gsl_complex_rect(std::sqrt(13)/Ltot, 0);
   
   gsl_complex length10 = gsl_complex_rect(std::sqrt(14)/Ltot, 0);
+  
+  gsl_complex length11 = gsl_complex_rect((1/std::sqrt(15))/Ltot, 0);
 
 
   std::clog << "Set Node Scattering Matrices" << std::endl;
@@ -112,27 +115,6 @@ int main()
       gsl_matrix_complex_set(right_circulator3, i, j, gsl_complex_rect(RC3[i][j], 0));
     }
   }
-  
-  /// Define 4-bond Circulator node
-  // Looks weird, because rows 1 and 2 are across from each other.
-  // Scattering is from 1->3,3->2,2->4,4->1
-  std::vector<std::vector<double>> C4 = 
-  {
-    { 0,  0,  0,  1},
-    { 0,  0,  1,  0},
-    { 1,  0,  0,  0},
-    { 0,  1,  0,  0}
-  };
-
-  gsl_matrix_complex* circulator4 = gsl_matrix_complex_calloc(4, 4);
-  for (int i=0; i<4; i++)
-  {
-    for (int j=0; j<4; j++)
-    { 
-      gsl_matrix_complex_set(circulator4, i, j, gsl_complex_rect(C4[i][j], 0));
-    }
-  }
-  
 
 
   /// Define 1-bond Neumann node (open reflector)
@@ -165,14 +147,16 @@ int main()
   QGO.AddNode(neumann3);    // 9
   
   //Connection , no phase shift
-  QGO.AddNode(neumann_reflector); // 10
-  QGO.AddNode(circulator4);       // 11
+  QGO.AddNode(left_circulator3); // 10
+  QGO.AddNode(left_circulator3); // 11
   QGO.AddNode(neumann_reflector); // 12
+  QGO.AddNode(neumann_reflector); // 13
   
   //Connection, pi phase shift
-  QGO.AddNode(dirichlet_reflector); // 13
-  QGO.AddNode(circulator4);         // 14
-  QGO.AddNode(dirichlet_reflector); // 15
+  QGO.AddNode(left_circulator3); // 15
+  QGO.AddNode(left_circulator3); // 14
+  QGO.AddNode(dirichlet_reflector); // 16
+  QGO.AddNode(dirichlet_reflector); // 17
   
 
   std::clog << "Connect Nodes with Bonds" << std::endl;
@@ -203,19 +187,23 @@ int main()
   QGO.Connect(8, 9, length8);
   
   //The connection between the graphs and the circulators
-  QGO.Connect(1, 11, length9);
+  QGO.Connect(1, 10, length9);
   QGO.Connect(8, 11, length9);
   
-  QGO.Connect(3, 14, length9);
+  QGO.Connect(3, 15, length9);
   QGO.Connect(6, 14, length9);
   
-  //The top circulator and the neumann reflectors
-  QGO.Connect(11, 10, length10);
-  QGO.Connect(11, 12, length10);
+  //The short wire between the circulators.
+  QGO.Connect(10, 11, length11);
+  QGO.Connect(14, 15, length11);
   
-  //The bottom circulator and the dirichlet reflectors
-  QGO.Connect(14, 13, length10);
-  QGO.Connect(14, 15, length10);
+  //The top circulators and the neumann reflectors
+  QGO.Connect(10, 12, length10);
+  QGO.Connect(11, 13, length10);
+  
+  //The bottom circulators and the dirichlet reflectors
+  QGO.Connect(14, 16, length10);
+  QGO.Connect(15, 17, length10);
   
 
 
@@ -224,8 +212,6 @@ int main()
 
   std::clog << "Printing the Matrix Information" << std::endl;
   std::cout << QGO << std::endl;
-
-  std::clog << Ltot;
-
+  
   return 0;
 }

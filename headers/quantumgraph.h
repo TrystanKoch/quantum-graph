@@ -275,7 +275,21 @@ class QuantumGraph
     // singular value decomposition with access to the private data
     // members.
     gsl_complex NewtonStep(const gsl_complex) const;
-
+    
+    
+    // Given a Quantum Graph object with suitable definitions for the
+    // bond lengths, this function normalizes that graph, keeping the
+    // bonds proportional while setting the total length so that the
+    // inter-eigenvalue spacing is normalized. It sums up the bond
+    // lengths then multiplies each length by 2*pi and divides by the
+    // length sum. This essentially scales the bond lengths such that
+    // the total length of the undirected bonds is pi. From weyl's
+    // formula, we can see that the average eigenvalue spacing is one.
+    //
+    // This method changes the object! It uses the update method above.
+    // Nothing is returned, but the original quantum graph is lost and
+    // replaced.
+    void Normalize();
 
 
     // Prints the information about a quantum graph into an output 

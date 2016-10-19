@@ -1,6 +1,6 @@
 
 
-#include "../quantumgraphobject.h"
+#include "quantumgraphobject.h"
 
 #include <iostream>
 

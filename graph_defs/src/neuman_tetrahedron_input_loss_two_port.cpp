@@ -1,6 +1,6 @@
 
 
-#include "../quantumgraphobject.h"
+#include "quantumgraphobject.h"
 
 #include <iostream>
 
@@ -30,12 +30,30 @@ int main()
     { 2./3.,  2./3., -1./3.}
   };
 
+  std::vector<std::vector<double>> N3_loss = 
+  {
+    {-1./2.,  1./2.,  1./2.},
+    { 1./2., -1./2.,  1./2.},
+    { 1./2.,  1./2., -1./2.}
+  };
+
   gsl_matrix_complex* Neumann3 = gsl_matrix_complex_calloc(3, 3);
   for (int i=0; i<3; i++)
   {
     for (int j=0; j<3; j++)
     { 
-      gsl_matrix_complex_set(Neumann3, i, j, gsl_complex_rect(N3[i][j], 0));
+      gsl_matrix_complex_set(Neumann3, i, j, 
+                             gsl_complex_rect(N3[i][j], 0));
+    }
+  }
+
+  gsl_matrix_complex* Neumann3_loss = gsl_matrix_complex_calloc(3, 3);
+  for (int i=0; i<3; i++)
+  {
+    for (int j=0; j<3; j++)
+    { 
+      gsl_matrix_complex_set(Neumann3_loss, i, j, 
+                             gsl_complex_rect(N3_loss[i][j], 0));
     }
   }
 
@@ -43,8 +61,8 @@ int main()
   QuantumGraphObject QGO;
 
   std::clog << "Add Nodes to Object" << std::endl;
-  QGO.AddNode(Neumann3);
-  QGO.AddNode(Neumann3);
+  QGO.AddNode(Neumann3_loss);
+  QGO.AddNode(Neumann3_loss);
   QGO.AddNode(Neumann3);
   QGO.AddNode(Neumann3);
 

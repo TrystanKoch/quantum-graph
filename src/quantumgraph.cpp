@@ -732,6 +732,30 @@ gsl_complex QuantumGraph::NewtonStep(const gsl_complex z) const
 }
 
 
+void QuantumGraph::Normalize()
+{
+  gsl_complex total_length = GSL_COMPLEX_ZERO;
+  
+  gsl_complex Li;
+  for (unsigned int i=0; i<lengths_->size; i++)
+  {
+    Li = gsl_vector_complex_get(lengths_, i);
+    total_length = gsl_complex_add(total_length, Li);
+  }
+  
+  gsl_complex scale = gsl_complex_div_real(total_length, 2 * M_PI);
+  
+  for (unsigned int i=0; i<lengths_->size; i++)
+  {
+    Li = gsl_vector_complex_get(lengths_, i);
+    Li = gsl_complex_div(Li, scale);
+    gsl_vector_complex_set(lengths_, i, Li);
+  }
+  
+  return;
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // File Output Method
 
