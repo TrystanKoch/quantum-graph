@@ -79,8 +79,8 @@
 // Right now this is the only way to specify a particular box. This may 
 // change in the future if I figure out an elegent way to pass these four
 // numbers in a way that is understandable.
-const double X_MIN = +1000;
-const double X_MAX = +1100;
+const double X_MIN = +0;
+const double X_MAX = +1000;
 const double Y_MIN = -0.011;
 const double Y_MAX = +0.01;
 
@@ -104,8 +104,8 @@ const double Y_MAX = +0.01;
 // However, especially for graphs that have Time reversal symmetry, and 
 // therefore only linear repulsion between eigenvalues, that two very close
 // eigenvalues might go unnoticed. (Still working on way to fix that.)
-const unsigned int NUM_HALVINGS_X = 15;
-const unsigned int NUM_HALVINGS_Y = 8;
+const unsigned int NUM_HALVINGS_X = 16;
+const unsigned int NUM_HALVINGS_Y = 10;
 
 
 
@@ -175,7 +175,7 @@ int main()
   // returns the number of bounding boxes it found.
   std::clog << "Recursively Finding Complex Root Bounds" << std::endl;
   unsigned long long int total 
-      = recursiveRootBounding(initialBoundary, QG);
+      = recursiveRootBounding(initialBoundary, QG, 1);
         
   // Gives the user the number of bounding boxes found, as a comparison to the
   // winding number above.

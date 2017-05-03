@@ -106,7 +106,10 @@ CODETARGETS=neuman_complete_five_graph \
 		quotient_graph_2 \
 		quotient_graph_3 \
 		quotient_graph_5 \
-		quotient_graph_6
+		quotient_graph_6 \
+		quotient_graph_6_uneven \
+		quotient_graph_7 \
+		quotient_graph_7_perturbed 
 
 
 LIBRARIES=quantumgraph \

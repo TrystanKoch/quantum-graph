@@ -14,28 +14,38 @@
 int main()
 {
 
+  double Ltot = 2*(1 + std::sqrt(2) + std::sqrt(3) 
+                     + std::sqrt(5) + std::sqrt(6)
+                     + std::sqrt(7) + std::sqrt(10) + std::sqrt(11) 
+                     + 2*std::sqrt(13) + 2*std::sqrt(14)
+                     + (1/std::sqrt(15))
+                  )/M_PI;
   
-  gsl_complex length1 = gsl_complex_rect(std::sqrt(1), 0);
+  gsl_complex length1 = gsl_complex_rect(std::sqrt(1)/Ltot, 0);
   
-  gsl_complex length2 = gsl_complex_rect(std::sqrt(2), 0);
+  gsl_complex length2 = gsl_complex_rect(std::sqrt(2)/Ltot, 0);
   
-  gsl_complex length3 = gsl_complex_rect(std::sqrt(3), 0);
+  gsl_complex length3 = gsl_complex_rect(std::sqrt(3)/Ltot, 0);
   
-  gsl_complex length4 = gsl_complex_rect(std::sqrt(5), 0);
+  gsl_complex length4 = gsl_complex_rect(std::sqrt(5)/Ltot, 0);
   
-  gsl_complex length5 = gsl_complex_rect(std::sqrt(6), 0);
+  gsl_complex length5 = gsl_complex_rect(std::sqrt(6)/Ltot, 0);
   
-  gsl_complex length6 = gsl_complex_rect(std::sqrt(7), 0);
+  gsl_complex length6 = gsl_complex_rect(std::sqrt(7)/Ltot, 0);
   
-  gsl_complex length7 = gsl_complex_rect(std::sqrt(10), 0);
+  gsl_complex length7 = gsl_complex_rect(std::sqrt(10)/Ltot, 0);
   
-  gsl_complex length8 = gsl_complex_rect(std::sqrt(11), 0);
+  gsl_complex length8 = gsl_complex_rect(std::sqrt(11)/Ltot, 0);
   
-  gsl_complex length9 = gsl_complex_rect(std::sqrt(13), 0);
+  gsl_complex length9 = gsl_complex_rect(std::sqrt(13)/Ltot, 0);
   
-  gsl_complex length10 = gsl_complex_rect(std::sqrt(14), 0);
+  gsl_complex length10 = gsl_complex_rect(std::sqrt(14)/Ltot, 0);
   
-  gsl_complex length11 = gsl_complex_rect(1/std::sqrt(15), 0);
+  gsl_complex length11 = gsl_complex_rect((1/std::sqrt(15))/Ltot, 0);
+  
+  
+  // Perturbed length of one leg
+  gsl_complex length10_p = gsl_complex_rect((std::sqrt(14)+1)/Ltot, 0);
 
 
   std::clog << "Set Node Scattering Matrices" << std::endl;
@@ -197,15 +207,12 @@ int main()
   
   //The bottom circulators and the dirichlet reflectors
   QGO.Connect(14, 16, length10);
-  QGO.Connect(15, 17, length10);
+  QGO.Connect(15, 17, length10_p);
   
 
 
   std::clog << "Updating Quantum Graph Matrices" << std::endl;
   QGO.UpdateQuantumGraph();
-  
-  std::clog << "Normalizing bond lengths" <<std::endl;
-  QGO.Normalize();
 
   std::clog << "Printing the Matrix Information" << std::endl;
   std::cout << QGO << std::endl;

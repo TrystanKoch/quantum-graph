@@ -158,11 +158,11 @@ std::vector<double> makeArgSumVector(SideType side, double sideConstant,
 //
 //
 unsigned long long int 
-recursiveRootBounding(BoundingBox& BB, const QuantumGraph &QG)
+recursiveRootBounding(BoundingBox& BB, const QuantumGraph &QG, const unsigned int max_roots)
 {
   unsigned long long int winding = windingNumber(BB);
 
-  if (winding > 1)
+  if (winding > max_roots)
   {
     if ((BB.realHalvings>1)&&(BB.imagHalvings>1))
     {
@@ -170,30 +170,30 @@ recursiveRootBounding(BoundingBox& BB, const QuantumGraph &QG)
       {
         BoundingBox rightBB;
         splitBoxLeftRight(BB, rightBB, QG);
-        return recursiveRootBounding(BB, QG) 
-               + recursiveRootBounding(rightBB, QG);
+        return recursiveRootBounding(BB, QG, max_roots) 
+               + recursiveRootBounding(rightBB, QG, max_roots);
       }
       else
       {
         BoundingBox bottomBB;
         splitBoxTopBottom(BB, bottomBB, QG);
-        return recursiveRootBounding(BB, QG)
-               + recursiveRootBounding(bottomBB, QG);
+        return recursiveRootBounding(BB, QG, max_roots)
+               + recursiveRootBounding(bottomBB, QG, max_roots);
       }
     }
     else if (BB.realHalvings>1)
     {
       BoundingBox rightBB;
       splitBoxLeftRight(BB, rightBB, QG);
-      return recursiveRootBounding(BB, QG) 
-             + recursiveRootBounding(rightBB, QG);
+      return recursiveRootBounding(BB, QG, max_roots) 
+             + recursiveRootBounding(rightBB, QG, max_roots);
     }
     else if (BB.imagHalvings>1)
     {
         BoundingBox bottomBB;
         splitBoxTopBottom(BB, bottomBB, QG);
-        return recursiveRootBounding(BB, QG)
-               + recursiveRootBounding(bottomBB, QG);
+        return recursiveRootBounding(BB, QG, max_roots)
+               + recursiveRootBounding(bottomBB, QG, max_roots);
     }
     else
     {
@@ -201,7 +201,7 @@ recursiveRootBounding(BoundingBox& BB, const QuantumGraph &QG)
       std::clog << BB << "    " << winding << std::endl;
     }
   }
-  else if (winding == 1)
+  else if (winding == max_roots)
   {
     std::cout << BB << std::endl;
   }

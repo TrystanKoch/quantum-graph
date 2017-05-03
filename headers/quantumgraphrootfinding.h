@@ -218,7 +218,7 @@ makeArgSumVector(SideType, double, double, double, unsigned int,
 //
 //
 unsigned long long int 
-recursiveRootBounding(BoundingBox&, const QuantumGraph&);
+recursiveRootBounding(BoundingBox&, const QuantumGraph&, const unsigned int max_roots=1);
 
 
 

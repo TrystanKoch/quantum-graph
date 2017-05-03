@@ -27,6 +27,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <cmath>
 
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
@@ -35,6 +36,7 @@
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf_gamma.h>
 
 // Use this code with the flag -DLAPACK_COMPLEX_CUSTOM. This way, the
 // LAPACKE code can take the gsl_complex types. Because of the rather
@@ -301,6 +303,24 @@ QuantumGraph::~QuantumGraph()
 
 
 
+// Declare an assignment operator
+QuantumGraph& QuantumGraph::operator=(const QuantumGraph& QG)
+{
+  if (this!= &QG)
+  {
+    num_bonds_ = QG.num_bonds_;
+    AllocateGraphMemory(num_bonds_);
+    gsl_matrix_complex_memcpy(scattering_matrix_, QG.scattering_matrix_);
+    gsl_vector_complex_memcpy(lengths_, QG.lengths_);
+    
+    MakeInternals();
+  }
+  
+  return *this;
+}
+
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // Internal Data initialization Methods
@@ -414,6 +434,11 @@ void QuantumGraph::Update(const gsl_vector_complex* lengths,
   MakeInternals();
 }
 
+////////////////////////////////////////////////////////////////////////
+// Accssor Methods
+
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // Computation Methods
@@ -448,6 +473,208 @@ gsl_complex QuantumGraph::Characteristic(const gsl_complex z) const
   gsl_matrix_complex_free(characteristic_matrix);
 
   return determinant;
+}
+
+
+// Takes the characteristic equation and multiplies it by the
+// square-root of the determinant of the scattering_matrix_ and the
+// transmission matrix.
+gsl_complex QuantumGraph::RealCharacteristic(const gsl_complex z) const
+{
+
+  gsl_matrix_complex* s_matrix 
+      = gsl_matrix_complex_calloc(num_bonds_, num_bonds_);
+  gsl_matrix_complex_memcpy(s_matrix, scattering_matrix_);
+  
+  int signum;
+  gsl_permutation* permutation = gsl_permutation_alloc(num_bonds_);
+
+  gsl_linalg_complex_LU_decomp(s_matrix, permutation, &signum);
+  
+  gsl_complex s_determinant 
+      = gsl_linalg_complex_LU_det(s_matrix, signum);
+  
+  gsl_complex t_determinant
+      = gsl_complex_exp(
+                   gsl_complex_mul(positive_imaginary_lengths_sum_, gsl_complex_mul_real(z, 0.5)));
+      
+  gsl_complex mul_factor
+      = gsl_complex_div(t_determinant, gsl_complex_sqrt(s_determinant));
+      
+  gsl_permutation_free(permutation);
+  gsl_matrix_complex_free(s_matrix);
+      
+  return gsl_complex_mul(Characteristic(z), mul_factor);
+}
+
+
+
+gsl_complex QuantumGraph::RealCharacteristicDerivative(const gsl_complex z) const
+{
+  gsl_complex trace_term;
+  gsl_complex first_term;
+  gsl_complex second_term;
+ 
+  first_term = gsl_complex_mul_real(positive_imaginary_lengths_sum_, 0.5);
+  
+  second_term = TraceTerm(z);
+  
+  trace_term = gsl_complex_add(first_term, second_term);
+  
+  return  gsl_complex_mul(RealCharacteristic(z), trace_term);
+
+}
+
+
+
+// Note: This code tested on some simple complex functions. Has decent
+// error if the solution is close to zero, but seems to work.
+// Because the function we're taking the derivatives of is entire, we
+// don't need to worry about the contour radius too much, but be
+// aware that it was chosen arbitrarily.
+gsl_complex QuantumGraph::CharacteristicDerivative(const gsl_complex z, 
+                                    const unsigned int derivative) const
+{
+  // Theoretically, any radius will work. I chose this one. Perhaps this
+  // will change if I understand the error analysis for the Cauchy 
+  // integral any better.
+  double contour_radius = 0.005;
+
+  // We start with 2^step sampled points. This is to avoid weird
+  // artifacts from really coarse trapezoids
+  unsigned int step = 4;
+  unsigned int min_steps = 5;
+  
+  // Variable declarations
+  unsigned int num_points;
+  gsl_complex trap_rule_sum;
+  gsl_complex trap_rule_term_n;
+  gsl_complex arg, exp_term;
+  double delta;
+  
+  std::vector<gsl_complex> R;
+  std::vector<gsl_complex> new_R;
+  
+  // Error initiation values. Really, they just need to be bigger
+  // than the allowed errors.
+  gsl_complex complex_error = GSL_COMPLEX_ONE;
+  double imag_error = 1;
+  double real_error = 1;
+  double ratio_real_error = 1;
+  double ratio_imag_error = 1;
+  
+  // These are our tolerable errors for the calculation. Arbitrary at
+  // the moment. Perhaps there's a more elegant way to describe these.
+  double allowed_error = 1E-16;
+  double allowed_ratio_error = 1E-14;
+ 
+  // There are a number of flags we need to check. This will make sure
+  // that the integration scheme has worked as well as we hope.
+  // 
+  // First, we check that the real part of our answer has converged
+  // appropriately. We check both the absolute error and the ratio of
+  // the error to the real part. If either of these converge to our
+  // satisfaction, then we can stop. We do the same for the imaginary
+  // part of our answer. Both must have converged.
+  //
+  // The only other thing we want to ensure is that we haven't found
+  // a really silly convergence just by luck of our starting sample
+  // points. It's unlikely, but when testing, I found some pathological
+  // examples. Here, we ensure that a set number of steps are taken.
+  // The final integration will contain at least 32 sampled points
+  // on the circle surrounding our desired argument.
+  while ( ( (ratio_real_error > allowed_ratio_error)
+             && (real_error > allowed_error))
+        ||( (ratio_imag_error > allowed_ratio_error) 
+             && (imag_error > allowed_error))
+        ||  (step < min_steps))
+  {
+  
+    // Number of points sampled is 2^step, from Romberg's method.
+    num_points = 1 << step;
+    
+    // Set the sum back to zero every time we start.
+    trap_rule_sum = GSL_COMPLEX_ZERO;
+    
+    // This is our angular step size. We need it to evaluate the
+    // function at the sampled points.
+    delta = 2*M_PI/num_points;
+    
+    
+    // This is just the normal Trapezoid Rule, integrating around the
+    // circle centered on the point we're finding the derivative of.
+    // Note that the first and last points in the integration are the
+    // same, simplifying our sum (.5+.5=1).
+    for (unsigned int n=0; n<num_points; n++)
+    {
+      // Take the nth point in the circle, and add it to the center
+      // point, finding our argument to the function call.
+      arg = gsl_complex_polar(contour_radius, delta*n);
+      arg = gsl_complex_add(arg, z);
+      
+      // This term is needed from Cauchy's integral theorem. It
+      // derives from the denominator.
+      exp_term = gsl_complex_polar(1, -(derivative)*delta*n);
+      
+      // Multiply the two components together
+      trap_rule_term_n = gsl_complex_mul(Characteristic(arg), exp_term);
+      
+      // Add it all together.
+      trap_rule_sum = gsl_complex_add(trap_rule_sum, trap_rule_term_n);
+    }
+    
+    // The sum we have found is not the full integral. There is an
+    // overall coefficient in the sum which we multiply by here.
+    trap_rule_sum = gsl_complex_div_real(trap_rule_sum, 
+                         num_points*pow(contour_radius, derivative));
+    trap_rule_sum = gsl_complex_mul_real(trap_rule_sum, gsl_sf_fact(derivative));
+    
+ 
+    // Our answer is the start of our new Romberg extrapolation scheme.
+    new_R.push_back(trap_rule_sum);
+    
+    // Romberg extrapolation requires the figure found in the trapezoid
+    // integration above, as well as previous answers from 
+    // lower-resolution quadratures. We use Romberg's extrapolation 
+    // scheme in this loop, where "a" is the new answer. 
+    for (unsigned int j=1; j<=R.size(); j++)
+    {
+      unsigned int c = 1<<2*j; // 4^j
+      gsl_complex a = gsl_complex_sub(new_R[j-1], R[j-1]);
+      a = gsl_complex_div_real(a, c-1);
+      a = gsl_complex_add(a, new_R[j-1]);
+      
+      new_R.push_back(a);
+    }
+    
+    // The error estimate will be the difference between the last two
+    // Romberg extrapolations. The error in the real and imaginary parts
+    // are tracked seperately, so that both the real and imaginary parts
+    // must have converged by the time the program gives an answer.
+    if (new_R.size() > 1)
+    {
+      complex_error = gsl_complex_sub(new_R.back(), new_R.end()[-2]);
+      
+      real_error = std::abs(GSL_REAL(complex_error));
+      ratio_real_error = real_error / std::abs(GSL_REAL(new_R.end()[-2]));
+      
+      imag_error = std::abs(GSL_IMAG(complex_error));
+      ratio_imag_error = imag_error / std::abs(GSL_IMAG(new_R.end()[-2]));
+    }
+    
+    // The previous step is no longer required. Turn the current step
+    // into the new previous step.
+    R = new_R;
+    new_R.clear();
+    
+    // Increment the step. This will increase the number of sampled
+    // points in the next trapezoid-rule integration.
+    step +=1;
+  }
+  
+  // The final extrapolation is our answer.
+  return R.back();
+  
 }
 
 
@@ -603,11 +830,11 @@ const
 }
 
 
-
+//FIXME: No longer does this
 // Uses much of the same code as the eigenvector code, in the beginning
 // but after the SVD is found, that is used to find the value of the
 // characteristic function divide by its derivative.
-gsl_complex QuantumGraph::NewtonStep(const gsl_complex z) const
+gsl_complex QuantumGraph::TraceTerm(const gsl_complex z) const
 {
   // Once again, D will stand for our characteristic matrix
   // T will stand for our transmission matrix, which we need seperately 
@@ -728,7 +955,13 @@ gsl_complex QuantumGraph::NewtonStep(const gsl_complex z) const
 
   // Finally, return the next iteration for the Newton Root finder.
   // This is our next guess for where the root is.
-  return gsl_complex_sub(z, gsl_complex_inverse(trace));
+  return trace;
+}
+
+///FIXME
+gsl_complex QuantumGraph::NewtonStep(gsl_complex z) const
+{
+  return gsl_complex_sub(z, gsl_complex_inverse(TraceTerm(z)));
 }
 
 
@@ -751,6 +984,8 @@ void QuantumGraph::Normalize()
     Li = gsl_complex_div(Li, scale);
     gsl_vector_complex_set(lengths_, i, Li);
   }
+  
+  MakeInternals();
   
   return;
 }

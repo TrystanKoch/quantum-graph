@@ -123,11 +123,20 @@ int main(int argc, char *argv[])
   std::vector<double> bin_errors 
       = FindBinErrors(best_histogram, num_data_points);
 
+
+  // Knuth's prior information about the histogram leads to an extra
+  // half data point in each bin. We place that in the histogram now.
+  for (unsigned int i=0; i<gsl_histogram_bins(best_histogram); i++)
+  {
+    best_histogram->bin[i] += 0.5;
+  }
+  
+  
   
   // Normalize the histogram so we find a probability distribution 
   // function.
   double bin_width = (data_max - data_min) / best_num_bins;
-  double bin_scale = 1 / (num_data_points * bin_width);
+  double bin_scale = 1 / ((num_data_points + 0.5 * best_num_bins)* bin_width);
   gsl_histogram_scale(best_histogram, bin_scale);
 
 
@@ -257,7 +266,8 @@ std::vector<double> FindBinErrors(gsl_histogram* histogram,
     term_under_radical /= num_data_points + 0.5 * num_bins + 1;
 
     // Finally, apply Knuth's formula.
-    error = num_bins / ( histogram_range * ( num_data_points + 0.5 ) );
+    error = num_bins / ( histogram_range
+                          * ( num_data_points + 0.5 * num_bins ) );
     error *= std::sqrt(term_under_radical);
 
     bin_errors.push_back(error);

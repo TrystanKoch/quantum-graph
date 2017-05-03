@@ -204,6 +204,18 @@ class QuantumGraph
     // explicitly free it when we delete the graph. So we have an
     // explicitly defined destructor method.
     ~QuantumGraph();
+    
+    
+    // Defining an assigment operator
+    QuantumGraph& operator=(const QuantumGraph&);
+    
+    
+    // Accessor Methods
+    unsigned int num_bonds() const;
+    
+    gsl_matrix_complex* scattering_matrix() const;
+    
+    gsl_vector_complex* lengths() const;
 
 
     // Returns the characteristic function for the quantum graph at a
@@ -216,6 +228,33 @@ class QuantumGraph
     //
     // This finds Det[T^{-1}(z)-S].
     gsl_complex Characteristic(const gsl_complex) const;
+    
+    
+    // Returns the characteristic function for the quantum graph at a
+    // given complex value. When this function returns zero, the 
+    // argument corresponds to an eigenvalue of the quantum graph.
+    //
+    // Input:  gsl_complex -> A complex wavenumber.
+    // Output: gsl_complex -> The characteristic equation's value at
+    //                        that wavenumber.
+    //
+    // This finds Det[T^{-1}(z)-S].
+    gsl_complex RealCharacteristic(const gsl_complex) const;
+    
+    
+    // Returns the Nth derivative of the characteristic function
+    // for the quantum graph at a given complex value. The derivative
+    // is 
+    //
+    // Input:  gsl_complex -> A complex wavenumber.
+    // Input: unsigned int -> The derivative you'd like.
+    // Output: gsl_complex -> The second derivative of the 
+    //                        characteristic equation at that
+    //                        wavenumber.
+    //
+    // This finds Det[T^{-1}(z)-S].
+    gsl_complex CharacteristicDerivative(const gsl_complex,
+                                         const unsigned int) const;
 
 
     // Finds the eigenvector corresponding to the complex wavenumber z.
@@ -257,6 +296,10 @@ class QuantumGraph
     double EigenvectorCheck(const gsl_complex, 
                             const gsl_vector_complex*) const;
 
+    //FIXME: Describe this
+    gsl_complex RealCharacteristicDerivative(const gsl_complex) const;
+    //FIXME: Moved functionality from NewtonStep to here
+    gsl_complex TraceTerm(const gsl_complex) const;
 
     // Given an initial guess z, computes z-f(z)/f'(z), to use in
     // Newton's root finding method. This method uses the singluar

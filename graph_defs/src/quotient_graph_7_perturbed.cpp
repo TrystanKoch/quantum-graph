@@ -37,6 +37,8 @@ int main()
   
   gsl_complex length11 = gsl_complex_rect(1/std::sqrt(15), 0);
 
+  gsl_complex length10_per = gsl_complex_rect(std::sqrt(14)+10, 0);
+
 
   std::clog << "Set Node Scattering Matrices" << std::endl;
   
@@ -193,7 +195,7 @@ int main()
   
   //The top circulators and the neumann reflectors
   QGO.Connect(10, 12, length10);
-  QGO.Connect(11, 13, length10);
+  QGO.Connect(11, 13, length10_per);
   
   //The bottom circulators and the dirichlet reflectors
   QGO.Connect(14, 16, length10);

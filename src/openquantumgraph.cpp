@@ -6,7 +6,7 @@
        nodes, bonds, and undirected bonds in the quantum graph's 
        structure.
 
-   Copyright (C) 2015  Trystan Koch
+   Copyright (C) 2016  Trystan Koch
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,31 +22,71 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ----------------------------------------------------------------------*/
 
+#include "quantumgraph.h"
 
-#ifndef OPENQUANTUMGRAPH_H_
-#define OPENQUANTUMGRAPH_H_
+#include <vector>
+#include <iostream>
+#include <sstream>
+#include <limits>
+#include <cmath>
 
 #include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_permutation.h>
+#include <gsl/gsl_blas.h>
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_sf_gamma.h>
 
-class OpenQuantumGraph : public QuantumGraph
+// Use this code with the flag -DLAPACK_COMPLEX_CUSTOM. This way, the
+// LAPACKE code can take the gsl_complex types. Because of the rather
+// universal way that complex types are defined, this is desirable for
+// removing much complexity from the code.
+#define lapack_complex_double gsl_complex
+#define lapack_complex_float gsl_complex_float
+
+#include <lapacke.h>
+
+
+OpenQuantumGraph::OpenQuantumGraph()
 {
-  private:
-    gsl_matrix_complex* reflection_matrix_;
-    gsl_matrix_complex* incoming_coupling_matrix_;
-    gsl_matrix_complex* outgoing_coupling_matrix_;
-  public:
-    OpenQuantumGraph();
-    OpenQuantumGraph(const gsl_vector_complex*,
-                     const gsl_matrix_complex*,
-                     const gsl_matrix_complex*,
-                     const gsl_matrix_complex*,
-                     const gsl_matrix_complex*);
-    OpenQuantumGraph(const OpenQuantumGraph&);
-    gsl_matrix_complex* internal_propagation_matrix(gsl_complex k);
-    gsl_matrix_complex* external_scattering_matrix(gsl_complex k);
-    gsl_matrix_complex* external_impedance_matrix(gsl_complex k);
+  
 }
 
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

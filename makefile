@@ -130,7 +130,11 @@ INCFLAGS=-I/usr/include/gsl -I$(INCDIR)
 TARGETS=bound_qg_roots \
 	find_bounded_qg_roots \
 	take_differences \
-	optimize_histogram
+	optimize_histogram \
+	perturb_quotient_graph \
+	secular_plot \
+        secular_plot_derivative \
+        real_find_roots
 
 
 LIBRARIES=quantumgraph \

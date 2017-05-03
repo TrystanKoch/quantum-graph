@@ -12,6 +12,8 @@ bin/
 bin/*
 obj/
 obj/*
+utilities/
+utilities/*
 
 # Plotting files, for now
 *.plt
